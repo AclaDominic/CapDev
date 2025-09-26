@@ -1,13 +1,54 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../../api/api";
 
 export default function AdminGoalsPage() {
   const [period, setPeriod] = useState(() => new Date().toISOString().slice(0, 7));
+  const [periodType, setPeriodType] = useState("month");
+  const [periodEnd, setPeriodEnd] = useState("");
   const [metric, setMetric] = useState("total_visits");
   const [target, setTarget] = useState(100);
+  const [serviceId, setServiceId] = useState("");
+  const [packageId, setPackageId] = useState("");
+  const [promoId, setPromoId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [goals, setGoals] = useState([]);
+  const [services, setServices] = useState([]);
+  const [packages, setPackages] = useState([]);
+  const [promos, setPromos] = useState([]);
+
+  // Load services, packages, and promos
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [servicesRes, promosRes] = await Promise.all([
+          api.get("/api/services"),
+          api.get("/api/service-discounts")
+        ]);
+        
+        setServices(servicesRes.data || []);
+        
+        // Filter promos to show only ongoing/future ones
+        const allPromos = promosRes.data || [];
+        const activePromos = allPromos.filter(promo => {
+          const today = new Date();
+          const endDate = new Date(promo.end_date);
+          return endDate >= today; // Show if end date is today or in the future
+        });
+        setPromos(activePromos);
+        
+        // Filter services that have bundle items (packages) - we'll show all packages
+        // since packages don't have time limits, they're always available
+        const packageServices = servicesRes.data?.filter(service => 
+          service.bundleItems && service.bundleItems.length > 0
+        ) || [];
+        setPackages(packageServices);
+      } catch (e) {
+        console.error("Failed to load data:", e);
+      }
+    };
+    loadData();
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -33,14 +74,40 @@ export default function AdminGoalsPage() {
     try {
       setLoading(true);
       setError("");
-      const periodStart = `${period}-01`;
-      await api.post("/api/goals", {
-        period_type: "month",
-        period_start: periodStart,
+      
+      const payload = {
+        period_type: periodType,
+        period_start: periodType === "month" ? `${period}-01` : period,
         metric,
         target_value: Number(target) || 0,
-      });
+      };
+
+      if (periodType === "promo" && periodEnd) {
+        payload.period_end = periodEnd;
+      }
+
+      if (metric === "service_availment" && serviceId) {
+        payload.service_id = Number(serviceId);
+      }
+
+      if (metric === "package_availment" && packageId) {
+        payload.package_id = Number(packageId);
+      }
+
+      if (metric === "promo_availment" && promoId) {
+        payload.promo_id = Number(promoId);
+      }
+
+      await api.post("/api/goals", payload);
       await load();
+      
+      // Reset form
+      setMetric("total_visits");
+      setServiceId("");
+      setPackageId("");
+      setPromoId("");
+      setPeriodEnd("");
+      setTarget(100);
     } catch (e) {
       console.error(e);
       setError(e?.response?.data?.message || "Failed to create goal.");
@@ -54,23 +121,57 @@ export default function AdminGoalsPage() {
     const targetVal = Number(g.target_value || 1);
     const now = new Date();
     const start = new Date(g.period_start);
-    const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
-    const totalDays = end.getDate();
-    const dayIndex = Math.min(totalDays, now < start ? 1 : now > end ? totalDays : now.getDate());
-    const expected = Math.round((targetVal * dayIndex) / totalDays);
+    
+    // Handle different period types
+    let end;
+    if (g.period_type === "month") {
+      end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+    } else {
+      end = new Date(g.period_end || g.period_start);
+    }
+    
+    const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    const daysPassed = Math.min(totalDays, now < start ? 1 : now > end ? totalDays : Math.ceil((now - start) / (1000 * 60 * 60 * 24)) + 1);
+    const expected = Math.round((targetVal * daysPassed) / totalDays);
 
     if (g.status === "missed") return { label: "Missed", color: "danger" };
-    if (g.status === "done") return { label: "On track", color: "success" };
+    if (g.status === "done") return { label: "Completed", color: "success" };
 
     if (actual >= expected) return { label: "On track", color: "success" };
     if (actual >= expected * 0.8) return { label: "At risk", color: "warning" };
-    return { label: "At risk", color: "warning" };
+    return { label: "Behind", color: "danger" };
   };
 
   const progressPct = (g) => {
     const actual = Number(g.latest_actual || 0);
     const target = Number(g.target_value || 1);
     return Math.min(100, Math.round((actual / target) * 100));
+  };
+
+  const getMetricDisplayName = (metric) => {
+    switch (metric) {
+      case "total_visits": return "Total Visits";
+      case "service_availment": return "Service Availment";
+      case "package_availment": return "Package Availment";
+      case "promo_availment": return "Promo Availment";
+      default: return metric;
+    }
+  };
+
+  const getGoalDescription = (goal) => {
+    switch (goal.metric) {
+      case "service_availment":
+        const service = services.find(s => s.id === goal.service_id);
+        return service ? `${service.name}` : "Unknown Service";
+      case "package_availment":
+        const package_ = packages.find(p => p.id === goal.package_id);
+        return package_ ? `${package_.name}` : "Unknown Package";
+      case "promo_availment":
+        const promo = promos.find(p => p.id === goal.promo_id);
+        return promo ? `${promo.service?.name || "Unknown Service"} Promo` : "Unknown Promo";
+      default:
+        return "";
+    }
   };
 
   return (
@@ -97,20 +198,137 @@ export default function AdminGoalsPage() {
         <div className="card-header">Create Goal</div>
         <div className="card-body">
           <form className="row g-3" onSubmit={createGoal}>
-            <div className="col-12 col-md-4">
-              <label className="form-label">Metric</label>
-              <select className="form-select" value={metric} onChange={(e) => setMetric(e.target.value)}>
-                <option value="total_visits">Total Visits</option>
+            <div className="col-12 col-md-6">
+              <label className="form-label">Period Type</label>
+              <select 
+                className="form-select" 
+                value={periodType} 
+                onChange={(e) => setPeriodType(e.target.value)}
+              >
+                <option value="month">Monthly</option>
+                <option value="promo">Promo Period</option>
               </select>
             </div>
-            <div className="col-12 col-md-4">
-              <label className="form-label">Period</label>
-              <input type="month" className="form-control" value={period} onChange={(e) => setPeriod(e.target.value)} />
+            
+            <div className="col-12 col-md-6">
+              <label className="form-label">Metric</label>
+              <select 
+                className="form-select" 
+                value={metric} 
+                onChange={(e) => setMetric(e.target.value)}
+              >
+                <option value="total_visits">Total Visits</option>
+                <option value="service_availment">Service Availment</option>
+                <option value="package_availment">Package Availment</option>
+                <option value="promo_availment">Promo Availment</option>
+              </select>
             </div>
-            <div className="col-12 col-md-4">
+
+            {periodType === "month" && (
+              <div className="col-12 col-md-6">
+                <label className="form-label">Period</label>
+                <input 
+                  type="month" 
+                  className="form-control" 
+                  value={period} 
+                  onChange={(e) => setPeriod(e.target.value)} 
+                />
+              </div>
+            )}
+
+            {periodType === "promo" && (
+              <>
+                <div className="col-12 col-md-6">
+                  <label className="form-label">Start Date</label>
+                  <input 
+                    type="date" 
+                    className="form-control" 
+                    value={period} 
+                    onChange={(e) => setPeriod(e.target.value)} 
+                  />
+                </div>
+                <div className="col-12 col-md-6">
+                  <label className="form-label">End Date</label>
+                  <input 
+                    type="date" 
+                    className="form-control" 
+                    value={periodEnd} 
+                    onChange={(e) => setPeriodEnd(e.target.value)} 
+                    required
+                  />
+                </div>
+              </>
+            )}
+
+            {metric === "service_availment" && (
+              <div className="col-12 col-md-6">
+                <label className="form-label">Service</label>
+                <select 
+                  className="form-select" 
+                  value={serviceId} 
+                  onChange={(e) => setServiceId(e.target.value)}
+                  required
+                >
+                  <option value="">Select a service...</option>
+                  {services.map(service => (
+                    <option key={service.id} value={service.id}>
+                      {service.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {metric === "package_availment" && (
+              <div className="col-12 col-md-6">
+                <label className="form-label">Package</label>
+                <select 
+                  className="form-select" 
+                  value={packageId} 
+                  onChange={(e) => setPackageId(e.target.value)}
+                  required
+                >
+                  <option value="">Select a package...</option>
+                  {packages.map(package_ => (
+                    <option key={package_.id} value={package_.id}>
+                      {package_.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {metric === "promo_availment" && (
+              <div className="col-12 col-md-6">
+                <label className="form-label">Promo</label>
+                <select 
+                  className="form-select" 
+                  value={promoId} 
+                  onChange={(e) => setPromoId(e.target.value)}
+                  required
+                >
+                  <option value="">Select a promo...</option>
+                  {promos.map(promo => (
+                    <option key={promo.id} value={promo.id}>
+                      {promo.service?.name || "Unknown Service"} - {promo.start_date} to {promo.end_date}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="col-12 col-md-6">
               <label className="form-label">Target Value</label>
-              <input type="number" min="1" className="form-control" value={target} onChange={(e) => setTarget(e.target.value)} />
+              <input 
+                type="number" 
+                min="1" 
+                className="form-control" 
+                value={target} 
+                onChange={(e) => setTarget(e.target.value)} 
+                required
+              />
             </div>
+
             <div className="col-12">
               <button className="btn btn-primary" disabled={loading}>
                 Create Goal
@@ -133,6 +351,8 @@ export default function AdminGoalsPage() {
                 <thead>
                   <tr>
                     <th>Metric</th>
+                    <th>Description</th>
+                    <th>Period</th>
                     <th>Target</th>
                     <th>Actual</th>
                     <th>Status</th>
@@ -142,7 +362,14 @@ export default function AdminGoalsPage() {
                 <tbody>
                   {goals.map((g) => (
                     <tr key={g.id}>
-                      <td>{g.metric}</td>
+                      <td>{getMetricDisplayName(g.metric)}</td>
+                      <td>{getGoalDescription(g)}</td>
+                      <td>
+                        {g.period_type === "month" 
+                          ? new Date(g.period_start).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+                          : `${new Date(g.period_start).toLocaleDateString()} - ${new Date(g.period_end).toLocaleDateString()}`
+                        }
+                      </td>
                       <td>{g.target_value}</td>
                       <td>{g.latest_actual || 0}</td>
                       <td>
@@ -176,4 +403,3 @@ export default function AdminGoalsPage() {
     </div>
   );
 }
-

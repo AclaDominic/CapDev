@@ -92,6 +92,7 @@ Route::middleware(['auth:sanctum', AdminOnly::class])->group(function () {
     Route::post('/discounts/{id}/cancel', [ServiceDiscountController::class, 'cancel']);
     Route::get('/discounts-overview', [ServiceDiscountController::class, 'allActivePromos']);
     Route::get('/discounts-archive', [ServiceDiscountController::class, 'archive']);
+    Route::get('/service-discounts', [ServiceDiscountController::class, 'allDiscounts']);
 
     // Clinic calendar management
     Route::prefix('clinic-calendar')->group(function () {

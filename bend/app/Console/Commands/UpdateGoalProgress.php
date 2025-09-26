@@ -21,20 +21,10 @@ class UpdateGoalProgress extends Command
             ->get();
 
         foreach ($activeGoals as $goal) {
-            $periodStart = Carbon::parse($goal->period_start)->startOfMonth();
-            $periodEnd = (clone $periodStart)->endOfMonth();
+            $periodStart = Carbon::parse($goal->period_start);
+            $periodEnd = $goal->period_end ? Carbon::parse($goal->period_end) : (clone $periodStart)->endOfMonth();
 
-            $actual = 0;
-            switch ($goal->metric) {
-                case 'total_visits':
-                    $actual = DB::table('patient_visits')
-                        ->whereNotNull('start_time')
-                        ->whereBetween('start_time', [$periodStart, $periodEnd])
-                        ->count();
-                    break;
-                default:
-                    $actual = 0;
-            }
+            $actual = $this->calculateActualValue($goal, $today);
 
             GoalProgressSnapshot::updateOrCreate(
                 [
@@ -46,7 +36,12 @@ class UpdateGoalProgress extends Command
                 ]
             );
 
-            if ($today->greaterThanOrEqualTo($periodEnd)) {
+            // Check if period has ended
+            $periodHasEnded = $goal->period_type === 'month' 
+                ? $today->greaterThanOrEqualTo($periodEnd)
+                : $today->greaterThanOrEqualTo($periodEnd);
+
+            if ($periodHasEnded) {
                 $goal->status = ($actual >= (int)$goal->target_value) ? 'done' : 'missed';
                 $goal->save();
             }
@@ -54,6 +49,66 @@ class UpdateGoalProgress extends Command
 
         $this->info('Goal progress updated for ' . $activeGoals->count() . ' goals.');
         return Command::SUCCESS;
+    }
+
+    /**
+     * Calculate the actual value for a goal based on its metric type
+     */
+    private function calculateActualValue(PerformanceGoal $goal, Carbon $asOfDate): int
+    {
+        $periodStart = Carbon::parse($goal->period_start);
+        $periodEnd = $goal->period_end ? Carbon::parse($goal->period_end) : (clone $periodStart)->endOfMonth();
+        
+        // Ensure we don't count beyond the asOfDate
+        $effectiveEnd = $asOfDate->lt($periodEnd) ? $asOfDate : $periodEnd;
+        
+        switch ($goal->metric) {
+            case 'total_visits':
+                return DB::table('patient_visits')
+                    ->whereNotNull('start_time')
+                    ->whereBetween('start_time', [$periodStart, $effectiveEnd])
+                    ->count();
+                    
+            case 'service_availment':
+                return DB::table('patient_visits')
+                    ->whereNotNull('start_time')
+                    ->where('service_id', $goal->service_id)
+                    ->whereBetween('start_time', [$periodStart, $effectiveEnd])
+                    ->count();
+                    
+            case 'package_availment':
+                // Count visits for the package service itself
+                $packageVisits = DB::table('patient_visits')
+                    ->whereNotNull('start_time')
+                    ->where('service_id', $goal->package_id)
+                    ->whereBetween('start_time', [$periodStart, $effectiveEnd])
+                    ->count();
+                    
+                // Also count visits for any services that are part of this package
+                $bundleVisits = DB::table('patient_visits')
+                    ->join('service_bundle_items', 'patient_visits.service_id', '=', 'service_bundle_items.child_service_id')
+                    ->whereNotNull('patient_visits.start_time')
+                    ->where('service_bundle_items.parent_service_id', $goal->package_id)
+                    ->whereBetween('patient_visits.start_time', [$periodStart, $effectiveEnd])
+                    ->count();
+                    
+                return $packageVisits + $bundleVisits;
+                
+            case 'promo_availment':
+                // Get the promo details
+                $promo = DB::table('service_discounts')->where('id', $goal->promo_id)->first();
+                if (!$promo) return 0;
+                
+                // Count visits for the service during the promo period
+                return DB::table('patient_visits')
+                    ->whereNotNull('start_time')
+                    ->where('service_id', $promo->service_id)
+                    ->whereBetween('start_time', [$periodStart, $effectiveEnd])
+                    ->count();
+                    
+            default:
+                return 0;
+        }
     }
 }
 

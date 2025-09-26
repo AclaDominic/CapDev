@@ -15,33 +15,66 @@ class GoalController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'period_type' => ['required', Rule::in(['month'])],
-            'period_start' => ['required', 'date'], // expect YYYY-MM-01
-            'metric' => ['required', Rule::in(['total_visits'])],
+            'period_type' => ['required', Rule::in(['month', 'promo'])],
+            'period_start' => ['required', 'date'], // expect YYYY-MM-01 for month, or specific date for promo
+            'period_end' => ['nullable', 'date'], // required for promo type
+            'metric' => ['required', Rule::in(['total_visits', 'package_availment', 'service_availment', 'promo_availment'])],
             'target_value' => ['required', 'integer', 'min:1'],
+            'service_id' => ['nullable', 'integer', 'exists:services,id'], // required for service_availment
+            'package_id' => ['nullable', 'integer', 'exists:services,id'], // required for package_availment
+            'promo_id' => ['nullable', 'integer', 'exists:service_discounts,id'], // required for promo_availment
         ]);
 
-        $periodStart = Carbon::parse($validated['period_start'])->startOfMonth();
+        // Additional validation based on metric type
+        if ($validated['metric'] === 'service_availment' && !$validated['service_id']) {
+            return response()->json(['message' => 'Service ID is required for service availment metric'], 422);
+        }
+        if ($validated['metric'] === 'package_availment' && !$validated['package_id']) {
+            return response()->json(['message' => 'Package ID is required for package availment metric'], 422);
+        }
+        if ($validated['metric'] === 'promo_availment' && !$validated['promo_id']) {
+            return response()->json(['message' => 'Promo ID is required for promo availment metric'], 422);
+        }
+        if ($validated['period_type'] === 'promo' && !$validated['period_end']) {
+            return response()->json(['message' => 'Period end is required for promo period type'], 422);
+        }
+
+        // Handle period start based on type
+        if ($validated['period_type'] === 'month') {
+            $periodStart = Carbon::parse($validated['period_start'])->startOfMonth();
+            $periodEnd = null;
+        } else {
+            $periodStart = Carbon::parse($validated['period_start']);
+            $periodEnd = Carbon::parse($validated['period_end']);
+        }
 
         $goal = PerformanceGoal::create([
             'period_type' => $validated['period_type'],
             'period_start' => $periodStart,
+            'period_end' => $periodEnd,
             'metric' => $validated['metric'],
             'target_value' => $validated['target_value'],
             'status' => 'active',
             'created_by' => $request->user()->id,
+            'service_id' => $validated['service_id'] ?? null,
+            'package_id' => $validated['package_id'] ?? null,
+            'promo_id' => $validated['promo_id'] ?? null,
         ]);
 
-        // If the goal is for the current month, initialize a snapshot that
-        // includes visits that have already happened earlier this month.
+        // If the goal is for the current period, initialize a snapshot that
+        // includes visits that have already happened earlier in the period.
         $today = Carbon::today();
-        if ($periodStart->isSameMonth($today) && $validated['metric'] === 'total_visits') {
-            $periodEnd = (clone $periodStart)->endOfMonth();
-            $actual = DB::table('patient_visits')
-                ->whereNotNull('start_time')
-                ->whereBetween('start_time', [$periodStart, $periodEnd])
-                ->count();
-
+        $shouldInitialize = false;
+        
+        if ($validated['period_type'] === 'month' && $periodStart->isSameMonth($today)) {
+            $shouldInitialize = true;
+        } elseif ($validated['period_type'] === 'promo' && $periodStart->lte($today) && $periodEnd->gte($today)) {
+            $shouldInitialize = true;
+        }
+        
+        if ($shouldInitialize) {
+            $actual = $this->calculateActualValue($goal, $today);
+            
             GoalProgressSnapshot::updateOrCreate(
                 [
                     'goal_id' => $goal->id,
@@ -75,11 +108,15 @@ class GoalController extends Controller
             return [
                 'id' => $g->id,
                 'period_type' => $g->period_type,
-                'period_start' => $g->period_start->format('Y-m-d'),
+                'period_start' => $g->period_start?->format('Y-m-d'),
+                'period_end' => $g->period_end?->format('Y-m-d'),
                 'metric' => $g->metric,
                 'target_value' => (int)$g->target_value,
                 'status' => $g->status,
                 'latest_actual' => (int)($latest->actual_value ?? 0),
+                'service_id' => $g->service_id,
+                'package_id' => $g->package_id,
+                'promo_id' => $g->promo_id,
             ];
         });
 
@@ -97,6 +134,66 @@ class GoalController extends Controller
             'goal' => $goal,
             'snapshots' => $snapshots,
         ]);
+    }
+
+    /**
+     * Calculate the actual value for a goal based on its metric type
+     */
+    private function calculateActualValue(PerformanceGoal $goal, Carbon $asOfDate): int
+    {
+        $periodStart = Carbon::parse($goal->period_start);
+        $periodEnd = $goal->period_end ? Carbon::parse($goal->period_end) : (clone $periodStart)->endOfMonth();
+        
+        // Ensure we don't count beyond the asOfDate
+        $effectiveEnd = $asOfDate->lt($periodEnd) ? $asOfDate : $periodEnd;
+        
+        switch ($goal->metric) {
+            case 'total_visits':
+                return DB::table('patient_visits')
+                    ->whereNotNull('start_time')
+                    ->whereBetween('start_time', [$periodStart, $effectiveEnd])
+                    ->count();
+                    
+            case 'service_availment':
+                return DB::table('patient_visits')
+                    ->whereNotNull('start_time')
+                    ->where('service_id', $goal->service_id)
+                    ->whereBetween('start_time', [$periodStart, $effectiveEnd])
+                    ->count();
+                    
+            case 'package_availment':
+                // Count visits for the package service itself
+                $packageVisits = DB::table('patient_visits')
+                    ->whereNotNull('start_time')
+                    ->where('service_id', $goal->package_id)
+                    ->whereBetween('start_time', [$periodStart, $effectiveEnd])
+                    ->count();
+                    
+                // Also count visits for any services that are part of this package
+                $bundleVisits = DB::table('patient_visits')
+                    ->join('service_bundle_items', 'patient_visits.service_id', '=', 'service_bundle_items.child_service_id')
+                    ->whereNotNull('patient_visits.start_time')
+                    ->where('service_bundle_items.parent_service_id', $goal->package_id)
+                    ->whereBetween('patient_visits.start_time', [$periodStart, $effectiveEnd])
+                    ->count();
+                    
+                return $packageVisits + $bundleVisits;
+                
+            case 'promo_availment':
+                // Get the promo details
+                $promo = DB::table('service_discounts')->where('id', $goal->promo_id)->first();
+                if (!$promo) return 0;
+                
+                // Count visits for the service during the promo period
+                return DB::table('patient_visits')
+                    ->whereNotNull('start_time')
+                    ->where('service_id', $promo->service_id)
+                    ->whereBetween('start_time', [$periodStart, $effectiveEnd])
+                    ->count();
+                    
+            default:
+                return 0;
+        }
     }
 }
 

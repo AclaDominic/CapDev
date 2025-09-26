@@ -202,4 +202,14 @@ class ServiceDiscountController extends Controller
         return response()->json($promos);
     }
 
+    public function allDiscounts()
+    {
+        $discounts = ServiceDiscount::with('service')
+            ->whereDate('end_date', '>=', Carbon::today()) // Only show ongoing/future promos
+            ->orderBy('start_date', 'desc')
+            ->get();
+
+        return response()->json($discounts);
+    }
+
 }

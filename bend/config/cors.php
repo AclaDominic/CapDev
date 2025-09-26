@@ -23,7 +23,7 @@ return [
         'http://127.0.0.1:5173',
         'http://127.0.0.1:8000',
         'https://it-42-capstone.vercel.app',
-        'https://d42f9e29db91.ngrok-free.app',
+        'https://f3b750689493.ngrok-free.app',
     ],
 
     'allowed_origins_patterns' => [],
