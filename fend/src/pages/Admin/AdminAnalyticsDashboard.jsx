@@ -103,6 +103,36 @@ export default function AdminAnalyticsDashboard() {
     },
   }), []);
 
+  const kpiInsights = useMemo(() => {
+    if (!data) return null;
+    const arrowPct = (x) => (x > 0 ? `▲ ${x}%` : x < 0 ? `▼ ${Math.abs(x)}%` : '—');
+    return {
+      visits: `Change vs last month: ${arrowPct(k?.total_visits?.pct_change || 0)}`,
+      approved: `Change vs last month: ${arrowPct(k?.approved_appointments?.pct_change || 0)}`,
+      noShows: `Change vs last month: ${arrowPct(k?.no_shows?.pct_change || 0)}`,
+      avgDuration: `Change vs last month: ${arrowPct(k?.avg_visit_duration_min?.pct_change || 0)}`,
+    };
+  }, [data, k]);
+
+  const paymentInsight = useMemo(() => {
+    const cash = k?.payment_method_share?.cash?.share_pct ?? 0;
+    const hmo = k?.payment_method_share?.hmo?.share_pct ?? 0;
+    const trendCash = k?.payment_method_share?.cash?.pct_point_change ?? 0;
+    const trendHmo = k?.payment_method_share?.hmo?.pct_point_change ?? 0;
+    if (cash === 0 && hmo === 0) return null;
+    return `Cash: ${cash}% (${trendCash >= 0 ? '▲' : '▼'}${Math.abs(trendCash)}), ` +
+      `HMO: ${hmo}% (${trendHmo >= 0 ? '▲' : '▼'}${Math.abs(trendHmo)}). ` +
+      (hmo > 60 ? 'Tip: Watch insurer approvals/SLAs.' : 'Tip: Balance channels if one dominates.');
+  }, [k]);
+
+  const topServiceInsight = useMemo(() => {
+    const s = (data?.top_services || [])[0];
+    if (!s) return null;
+    const change = s.pct_change ?? 0;
+    return `Top service: ${s.service_name} (Δ ${change >= 0 ? '▲' : '▼'}${Math.abs(change)}% vs last month). ` +
+      `Tip: Align stock/staffing; promote under-performers.`;
+  }, [data]);
+
   const pct = (v) => (typeof v === "number" ? `${v > 0 ? "+" : ""}${v.toFixed(2)}%` : "0%");
 
   const kpiCard = (title, value, change) => (
@@ -152,15 +182,19 @@ export default function AdminAnalyticsDashboard() {
           <div className="row g-3 mb-3">
             <div className="col-12 col-md-3">
               {kpiCard("Total Visits", k?.total_visits?.value, k?.total_visits?.pct_change)}
+              {kpiInsights && <small className="text-muted block mt-1">{kpiInsights.visits}</small>}
             </div>
             <div className="col-12 col-md-3">
               {kpiCard("Approved Appointments", k?.approved_appointments?.value, k?.approved_appointments?.pct_change)}
+              {kpiInsights && <small className="text-muted block mt-1">{kpiInsights.approved}</small>}
             </div>
             <div className="col-12 col-md-3">
               {kpiCard("No-shows", k?.no_shows?.value, k?.no_shows?.pct_change)}
+              {kpiInsights && <small className="text-muted block mt-1">{kpiInsights.noShows}</small>}
             </div>
             <div className="col-12 col-md-3">
               {kpiCard("Avg Visit (min)", k?.avg_visit_duration_min?.value?.toFixed?.(1) ?? 0, k?.avg_visit_duration_min?.pct_change)}
+              {kpiInsights && <small className="text-muted block mt-1">{kpiInsights.avgDuration}</small>}
             </div>
           </div>
 
@@ -173,6 +207,7 @@ export default function AdminAnalyticsDashboard() {
                   <div className="mt-2 small text-muted">
                     Change vs last month: Cash {pct(k?.payment_method_share?.cash?.pct_point_change || 0)} • HMO {pct(k?.payment_method_share?.hmo?.pct_point_change || 0)}
                   </div>
+                  {paymentInsight && <small className="text-muted block mt-2">{paymentInsight}</small>}
                 </div>
               </div>
             </div>
@@ -194,6 +229,7 @@ export default function AdminAnalyticsDashboard() {
                       <li className="list-group-item">No data</li>
                     )}
                   </ul>
+                  {topServiceInsight && <small className="text-muted block mt-2">{topServiceInsight}</small>}
                 </div>
               </div>
             </div>
