@@ -112,6 +112,7 @@ export default function AdminMonthlyReport() {
 
   const lineOptions = useMemo(() => ({
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
       tooltip: { enabled: true },
@@ -119,8 +120,15 @@ export default function AdminMonthlyReport() {
       title: { display: false },
     },
     scales: {
-      x: { title: { display: true, text: "Day" } },
-      y: { title: { display: true, text: "Visits" }, beginAtZero: true, ticks: { precision: 0 } },
+      x: { 
+        title: { display: true, text: "Day", font: { size: 12 } },
+        ticks: { font: { size: 11 } }
+      },
+      y: { 
+        title: { display: true, text: "Visits", font: { size: 12 } }, 
+        beginAtZero: true, 
+        ticks: { precision: 0, font: { size: 11 } }
+      },
     },
   }), []);
 
@@ -168,19 +176,31 @@ export default function AdminMonthlyReport() {
 
   const hourBarOptions = useMemo(() => ({
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
-      legend: { display: true },
+      legend: { 
+        display: true,
+        labels: { font: { size: 11 } }
+      },
       tooltip: { enabled: true },
       datalabels: {
         anchor: "end",
         align: "end",
         offset: 2,
+        font: { size: 9 },
         ...defaultDatalabels,
       },
     },
     scales: {
-      x: { title: { display: true, text: "Hour of Day" } },
-      y: { title: { display: true, text: "Visits (total) / Avg per day" }, beginAtZero: true, ticks: { precision: 0 } },
+      x: { 
+        title: { display: true, text: "Hour of Day", font: { size: 12 } },
+        ticks: { font: { size: 11 } }
+      },
+      y: { 
+        title: { display: true, text: "Visits (total) / Avg per day", font: { size: 12 } }, 
+        beginAtZero: true, 
+        ticks: { precision: 0, font: { size: 11 } }
+      },
     },
   }), []);
 
@@ -199,6 +219,7 @@ export default function AdminMonthlyReport() {
 
   const serviceBarOptions = useMemo(() => ({
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
       tooltip: { enabled: true },
@@ -206,15 +227,25 @@ export default function AdminMonthlyReport() {
         anchor: "end",
         align: "end",
         offset: 2,
+        font: { size: 9 },
         ...defaultDatalabels,
       },
     },
     scales: {
       x: {
-        title: { display: true, text: "Service" },
-        ticks: { autoSkip: false, maxRotation: 60, minRotation: 30 },
+        title: { display: true, text: "Service", font: { size: 12 } },
+        ticks: { 
+          autoSkip: false, 
+          maxRotation: 60, 
+          minRotation: 30,
+          font: { size: 10 }
+        },
       },
-      y: { title: { display: true, text: "Visits" }, beginAtZero: true, ticks: { precision: 0 } },
+      y: { 
+        title: { display: true, text: "Visits", font: { size: 12 } }, 
+        beginAtZero: true, 
+        ticks: { precision: 0, font: { size: 11 } }
+      },
     },
   }), []);
 
@@ -239,11 +270,13 @@ export default function AdminMonthlyReport() {
 
   const visitTypeOptions = useMemo(() => ({
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
       tooltip: { enabled: true },
       datalabels: {
         color: "#fff",
+        font: { size: 10, weight: "bold" },
         formatter: (value) => {
           if (!value) return "";
           const pct = Math.round((value / totalVisitType) * 100);
@@ -430,24 +463,27 @@ export default function AdminMonthlyReport() {
   };
 
   return (
-    <div className="p-2">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3 className="m-0">📈 Monthly Visits Report</h3>
-        <div className="d-flex gap-2 align-items-center">
+    <div className="p-2 p-md-3">
+      {/* Responsive Header */}
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
+        <h3 className="m-0 fs-4 fs-md-3">📈 Monthly Visits Report</h3>
+        <div className="d-flex flex-column flex-sm-row gap-2 align-items-stretch align-items-sm-center w-100 w-md-auto">
           <input
             type="month"
-            className="form-control"
-            style={{ width: 170 }}
+            className="form-control form-control-sm"
+            style={{ minWidth: 150, maxWidth: 170 }}
             value={month}
             onChange={(e) => setMonth(e.target.value)}
             aria-label="Select month"
           />
-          <button className="btn btn-outline-secondary" onClick={load} disabled={loading}>
-            Refresh
-          </button>
-          <button className="btn btn-dark" onClick={downloadPdf} disabled={loading}>
-            Download PDF
-          </button>
+          <div className="d-flex gap-2">
+            <button className="btn btn-outline-secondary btn-sm" onClick={load} disabled={loading}>
+              Refresh
+            </button>
+            <button className="btn btn-dark btn-sm" onClick={downloadPdf} disabled={loading}>
+              Download PDF
+            </button>
+          </div>
         </div>
       </div>
 
@@ -461,23 +497,30 @@ export default function AdminMonthlyReport() {
         <div>Loading…</div>
       ) : (
         <>
+          {/* Total Visits Card */}
           <div className="row g-3 mb-3">
-            <div className="col-12 col-md-3">
-              <div className="card h-100">
-                <div className="card-body">
-                  <div className="text-muted">Total Visits</div>
-                  <div className="fs-3 fw-bold">{data?.totals?.visits ?? 0}</div>
+            <div className="col-12 col-sm-6 col-md-4 col-lg-3">
+              <div className="card h-100 shadow-sm">
+                <div className="card-body text-center">
+                  <div className="text-muted small">Total Visits</div>
+                  <div className="fs-2 fs-md-3 fw-bold text-primary">{data?.totals?.visits ?? 0}</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="row">
-            <div className="col-12 col-md-6 mb-3">
-              <div className="card h-100">
-                <div className="card-header">Daily Counts</div>
+          {/* Charts Grid */}
+          <div className="row g-3">
+            {/* Daily Counts Chart */}
+            <div className="col-12 col-lg-6">
+              <div className="card h-100 shadow-sm">
+                <div className="card-header">
+                  <h6 className="mb-0">Daily Counts</h6>
+                </div>
                 <div className="card-body">
-                  <Line data={lineData} options={lineOptions} />
+                  <div style={{ height: "300px", position: "relative" }}>
+                    <Line data={lineData} options={lineOptions} />
+                  </div>
                   {daySummary && (
                     <small className="text-muted d-block mt-2">
                       Peak day: {daySummary.peak.day} ({daySummary.peak.count} visits). Lowest day: {daySummary.low.day} ({daySummary.low.count}). Avg/day: {daySummary.avgPerDay.toFixed(1)}.
@@ -486,11 +529,17 @@ export default function AdminMonthlyReport() {
                 </div>
               </div>
             </div>
-            <div className="col-12 col-md-6 mb-3">
-              <div className="card h-100">
-                <div className="card-header">By Hour</div>
+
+            {/* By Hour Chart */}
+            <div className="col-12 col-lg-6">
+              <div className="card h-100 shadow-sm">
+                <div className="card-header">
+                  <h6 className="mb-0">By Hour</h6>
+                </div>
                 <div className="card-body">
-                  <Bar data={hourBarData} options={hourBarOptions} />
+                  <div style={{ height: "300px", position: "relative" }}>
+                    <Bar data={hourBarData} options={hourBarOptions} />
+                  </div>
                   {hourSummary && (
                     <small className="text-muted d-block mt-2">
                       Peak hour: {hourSummary.peakHour}:00 ({hourSummary.peakCount} visits). Avg/hour: {hourSummary.avgPerHour.toFixed(1)}. Tip: Staff up around peak hour.
@@ -499,73 +548,76 @@ export default function AdminMonthlyReport() {
                 </div>
               </div>
             </div>
-  {/* //------------------------------j */}         
-{/* ----------------mas maliit na donut ---------------- */}
-<div className="col-12 col-md-4 col-lg-3 mb-3">
-  <div className="card h-100 shadow-sm">
-    <div className="card-header p-2 text-center" style={{ fontSize: "0.9rem" }}>
-      Visit Type
-    </div>
-    <div className="card-body d-flex flex-column align-items-center justify-content-center p-2">
-      <div style={{ width: "250px", height: "250px" }}>
-        <Doughnut
-          data={visitTypeData}
-          options={{
-            ...visitTypeOptions,
-            maintainAspectRatio: false,
-            cutout: "65%", 
-            plugins: {
-              legend: { display: false }, 
-              tooltip: { enabled: true },
-            },
-          }}
-        />
-      </div>
 
-      {/* Custom Legend */}
-      <div className="mt-2 w-100">
-        {visitType.map((v, idx) => {
-          const color = getVisitTypeColors(visitType)[idx];
-          return (
-            <div
-              key={v.label}
-              className="d-flex align-items-center justify-content-between"
-              style={{ fontSize: "0.75rem", marginBottom: "3px" }}
-            >
-              <span className="d-flex align-items-center">
-                <span
-                  className="me-2"
-                  style={{
-                    display: "inline-block",
-                    width: 10,
-                    height: 10,
-                    backgroundColor: color,
-                    borderRadius: 2,
-                  }}
-                />
-                {v.label}
-              </span>
-              <strong>{v.count}</strong>
+            {/* Visit Type Donut Chart */}
+            <div className="col-12 col-md-6 col-lg-4">
+              <div className="card h-100 shadow-sm">
+                <div className="card-header text-center">
+                  <h6 className="mb-0">Visit Type</h6>
+                </div>
+                <div className="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                  <div className="w-100" style={{ maxWidth: "280px", height: "200px", position: "relative" }}>
+                    <Doughnut
+                      data={visitTypeData}
+                      options={{
+                        ...visitTypeOptions,
+                        maintainAspectRatio: false,
+                        cutout: "60%", 
+                        plugins: {
+                          legend: { display: false }, 
+                          tooltip: { enabled: true },
+                        },
+                      }}
+                    />
+                  </div>
+
+                  {/* Custom Legend */}
+                  <div className="mt-3 w-100">
+                    {visitType.map((v, idx) => {
+                      const color = getVisitTypeColors(visitType)[idx];
+                      return (
+                        <div
+                          key={v.label}
+                          className="d-flex align-items-center justify-content-between mb-1"
+                          style={{ fontSize: "0.8rem" }}
+                        >
+                          <span className="d-flex align-items-center">
+                            <span
+                              className="me-2"
+                              style={{
+                                display: "inline-block",
+                                width: 12,
+                                height: 12,
+                                backgroundColor: color,
+                                borderRadius: 2,
+                              }}
+                            />
+                            <span className="text-capitalize">{v.label}</span>
+                          </span>
+                          <strong>{v.count}</strong>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {visitTypeSummary && (
+                    <small className="text-muted d-block mt-2 text-center">
+                      Appointments: {visitTypeSummary.appointmentPct.toFixed(0)}% · Walk-ins: {visitTypeSummary.walkinPct.toFixed(0)}%. Tip: If walk-ins surge, consider more front-desk coverage.
+                    </small>
+                  )}
+                </div>
+              </div>
             </div>
-          );
-        })}
-      </div>
-      {visitTypeSummary && (
-        <small className="text-muted d-block mt-2 text-center">
-          Appointments: {visitTypeSummary.appointmentPct.toFixed(0)}% · Walk-ins: {visitTypeSummary.walkinPct.toFixed(0)}%. Tip: If walk-ins surge, consider more front-desk coverage.
-        </small>
-      )}
-    </div>
-  </div>
-</div>
 
-
-{/* //------------------------------j */}
-            <div className="col-12 col-md-6 mb-3">
-              <div className="card h-100">
-                <div className="card-header">By Service</div>
+            {/* By Service Chart */}
+            <div className="col-12 col-md-6 col-lg-8">
+              <div className="card h-100 shadow-sm">
+                <div className="card-header">
+                  <h6 className="mb-0">By Service</h6>
+                </div>
                 <div className="card-body">
-                  <Bar data={serviceBarData} options={serviceBarOptions} />
+                  <div style={{ height: "300px", position: "relative" }}>
+                    <Bar data={serviceBarData} options={serviceBarOptions} />
+                  </div>
                   {serviceSummary && (
                     <small className="text-muted d-block mt-2">
                       Top service: {serviceSummary.topService} ({serviceSummary.topCount} visits, {serviceSummary.topShare.toFixed(0)}% of monthly volume). Tip: Ensure supplies/staffing align with demand.

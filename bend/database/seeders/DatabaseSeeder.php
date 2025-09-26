@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             PatientSeeder::class,
             DentistScheduleSeeder::class,
             ReportSeeder::class,
+            AnalyticsSeeder::class, // Comprehensive 1-year analytics data
             // Add other seeders here as needed
         ]);
     }
