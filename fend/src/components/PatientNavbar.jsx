@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../api/api";
 import NotificationBell from "./NotificationBell"; // ✅ new bell
+import logo from "../pages/logo.png"; // ✅ import your logo
 
 function PatientNavbar() {
   const navigate = useNavigate();
@@ -25,22 +26,28 @@ function PatientNavbar() {
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-light shadow-sm px-3">
-      <Link className="navbar-brand" to="/">
-        🦷 DCMS
+      <Link className="navbar-brand d-flex align-items-center" to="/">
+        {/* ✅ logo + text */}
+        <img
+          src={logo}
+          alt="Kreative Dental Clinic"
+          style={{ height: "32px", width: "32px", objectFit: "contain", marginRight: "8px" }}
+        />
+        Kreative Dental & Orthodontics
       </Link>
 
       <div className="ms-auto d-flex align-items-center gap-3">
         <Link to="/patient/appointment" className="nav-link">
-          📅 Book
+       Book
         </Link>
         <Link to="/patient/appointments" className="nav-link">
-          📜 Appointments
+           Appointments
         </Link>
         <Link to="/patient/profile" className="nav-link">
-          👤 Profile
+           Profile
         </Link>
 
-        {/* 🔔 Unified notifications (closures, targeted alerts, etc.) */}
+        {/* 🔔 Unified notifications */}
         {user && <NotificationBell />}
 
         {user && (

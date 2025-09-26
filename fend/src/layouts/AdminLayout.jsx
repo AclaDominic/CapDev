@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Outlet, useNavigate, NavLink } from "react-router-dom";
 import api from "../api/api";
 import "./AdminLayout.css";
@@ -5,6 +6,17 @@ import NotificationsBell from "../components/NotificationBell";
 
 function AdminLayout() {
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 992);
+
+  // Keep sidebar open by default on lg+, closed on md-
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 992) setSidebarOpen(true);
+      else setSidebarOpen(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -17,215 +29,191 @@ function AdminLayout() {
   };
 
   return (
-    <div className="d-flex">
+    <div className={`admin-shell ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
       {/* Sidebar */}
-      <div
-        className="bg-dark text-white p-3"
-        style={{ width: "250px", minHeight: "100vh" }}
-      >
-        <div
-          className="sidebar-header sticky-top bg-dark pb-2 mb-3 border-bottom border-secondary d-flex align-items-center justify-content-between"
-          style={{ zIndex: 1 }}
-        >
-          <h4 className="m-0">Admin Panel</h4>
-          <div className="ms-2">
-            <NotificationsBell />
+      <aside className="sidebar bg-dark text-white">
+        <div className="sidebar-header d-flex align-items-center justify-content-between">
+          <h5 className="m-0 fw-bold text-center">Admin Panel</h5>
+          <div className="d-flex align-items-center gap-2">
+            
+            {/* Close button (mobile) */}
+            <button
+              className="btn btn-sm btn-outline-light d-lg-none"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Close sidebar"
+            >
+              ✕
+            </button>
           </div>
         </div>
-        <ul className="nav flex-column">
+
+        <ul className="nav flex-column nav-scroller">
+ 
+
+
           <li className="nav-item">
             <NavLink
               to="/admin"
               end
               className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
+                "nav-link" + (isActive ? " active" : "")
               }
             >
-              🏠 Dashboard
+              <span className="icon">🏠</span>
+              <span className="label">Dashboard</span>
             </NavLink>
           </li>
 
+          <li className="nav-item mt-2 small text-uppercase text-secondary ps-3">Devices</li>
           <li className="nav-item">
-            <NavLink
-              to="/admin/device-approvals"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              🔑 Device Approvals
+            <NavLink to="/admin/device-approvals" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">🔑</span>
+              <span className="label">Device Approvals</span>
             </NavLink>
           </li>
           <li className="nav-item">
-            <NavLink
-              to="/admin/approved-devices"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              ✅ Approved Devices
+            <NavLink to="/admin/approved-devices" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">✅</span>
+              <span className="label">Approved Devices</span>
             </NavLink>
           </li>
 
+          <li className="nav-item mt-2 small text-uppercase text-secondary ps-3">People</li>
           <li className="nav-item">
-            <NavLink
-              to="/admin/staff-register"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              👥 Create Staff Account
+            <NavLink to="/admin/staff-register" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">👥</span>
+              <span className="label">Create Staff Account</span>
+            </NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink to="/admin/dentists" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">🧑‍⚕️</span>
+              <span className="label">Dentists</span>
             </NavLink>
           </li>
 
+          <li className="nav-item mt-2 small text-uppercase text-secondary ps-3">Appointments</li>
           <li className="nav-item">
-            <NavLink
-              to="/admin/schedule"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              📆 Clinic Schedule
+            <NavLink to="/admin/schedule" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">📆</span>
+              <span className="label">Clinic Schedule</span>
             </NavLink>
           </li>
           <li className="nav-item">
-            <NavLink
-              to="/admin/dentists"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              🧑‍⚕️ Dentists
+            <NavLink to="/admin/appointments" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">📅</span>
+              <span className="label">Appointments</span>
             </NavLink>
           </li>
 
+          <li className="nav-item mt-2 small text-uppercase text-secondary ps-3">Services</li>
           <li className="nav-item">
-            <NavLink
-              to="/admin/appointments"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              📅 Appointments
+            <NavLink to="/admin/services" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">🦷</span>
+              <span className="label">Manage Services</span>
+            </NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink to="/admin/service-discounts" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">💸</span>
+              <span className="label">Service Promos</span>
+            </NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink to="/admin/promo-archive" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">📁</span>
+              <span className="label">Promo Archive</span>
             </NavLink>
           </li>
 
+          <li className="nav-item mt-2 small text-uppercase text-secondary ps-3">Ops</li>
           <li className="nav-item">
-            <NavLink
-              to="/admin/services"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              🦷 Manage Services
+            <NavLink to="/admin/inventory" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">📦</span>
+              <span className="label">Inventory</span>
             </NavLink>
           </li>
           <li className="nav-item">
-            <NavLink
-              to="/admin/service-discounts"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              💸 Service Promos
+            <NavLink to="/admin/goals" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">🎯</span>
+              <span className="label">Goals</span>
             </NavLink>
           </li>
           <li className="nav-item">
-            <NavLink
-              to="/admin/promo-archive"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              📁 Promo Archive
+            <NavLink to="/admin/monthly-report" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">📈</span>
+              <span className="label">Monthly Visits</span>
+            </NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink to="/admin/analytics" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">📉</span>
+              <span className="label">Analytics</span>
+            </NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink to="/admin/system-logs" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">📊</span>
+              <span className="label">System Logs</span>
             </NavLink>
           </li>
 
-          {/* --- Inventory --- */}
-          <li className="nav-item mt-2">
-            <NavLink
-              to="/admin/inventory"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              📦 Inventory
+          <li className="nav-item mt-2 small text-uppercase text-secondary ps-3">Account</li>
+          <li className="nav-item">
+            <NavLink to="/admin/profile" className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
+              <span className="icon">👤</span>
+              <span className="label">Account</span>
             </NavLink>
           </li>
 
-          {/* --- Goals --- */}
-          <li className="nav-item">
-            <NavLink
-              to="/admin/goals"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              🎯 Goals
-            </NavLink>
-          </li>
+          <li className="nav-item mt-4 px-3">
+  <button
+    className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center icon-only-btn"
+    onClick={handleLogout}
+    title="Logout"
+    aria-label="Logout"
+  >
+    {/* Bootstrap Icon */}
+    <i className="bi-box-arrow-right fs-5"></i>
+    {/* If you don’t use Bootstrap Icons, use the emoji instead:
+      <span role="img" aria-label="Logout" className="fs-5">🚪</span>
+    */}
+    <span className="visually-hidden">Logout</span>
+  </button>
+</li>
 
-          {/* --- Reports --- */}
-          <li className="nav-item">
-            <NavLink
-              to="/admin/monthly-report"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              📈 Monthly Visits
-            </NavLink>
-          </li>
-
-          {/* --- Analytics --- */}
-          <li className="nav-item">
-            <NavLink
-              to="/admin/analytics"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              📉 Analytics
-            </NavLink>
-          </li>
-          
-          {/* --- System Logs --- */}
-          <li className="nav-item">
-            <NavLink
-              to="/admin/system-logs"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              📊 System Logs
-            </NavLink>
-          </li>
-
-          <li className="nav-item">
-            <NavLink
-              to="/admin/profile"
-              className={({ isActive }) =>
-                "nav-link text-white" + (isActive ? " fw-bold" : "")
-              }
-            >
-              👤 Account
-            </NavLink>
-          </li>
-
-          <li className="nav-item mt-4">
-            <button
-              className="btn btn-outline-danger w-100"
-              onClick={handleLogout}
-            >
-              🚪 Logout
-            </button>
-          </li>
         </ul>
+      </aside>
+
+      {/* Main area */}
+      <div className="content-area">
+        {/* Topbar */}
+<div className="topbar d-flex align-items-center">
+  <button
+    className="btn btn-dark toggle-btn me-2"
+    onClick={() => setSidebarOpen((v) => !v)}
+    aria-label="Toggle sidebar"
+  >
+    ☰
+  </button>
+  <div className="flex-grow-1" />
+  {/* Bell lives here only */}
+  <NotificationsBell />
+
+
+        </div>
+
+        {/* Routed content */}
+        <main className="p-4">
+          <Outlet />
+        </main>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-grow-1 p-4">
-        <Outlet />
-      </div>
+      {/* Mobile overlay */}
+      <div
+        className={`sidebar-overlay ${sidebarOpen ? "show" : ""}`}
+        onClick={() => setSidebarOpen(false)}
+      />
     </div>
   );
 }

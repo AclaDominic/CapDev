@@ -1,0 +1,7 @@
+body {
+  --navbar-height: 70px; /* adjust if your navbar is taller */
+}
+
+.patient-main {
+  padding-top: var(--navbar-height);
+}

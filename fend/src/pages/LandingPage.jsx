@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import LoadingSpinner from "../components/LoadingSpinner";
 import "./LandingPage.css";
-import kreativeLogo from "./kreativelogo.jpg"; 
+import kreativeLogo from "./logo.png"; 
 
 
 function LandingPage() {
@@ -47,12 +47,7 @@ function LandingPage() {
         <li><a href="#home" className="nav-link">Home</a></li>
         <li><a href="#about" className="nav-link">About</a></li>
         <li><a href="#contact" className="nav-link">Contact</a></li>
-        <li><Link to="/login" className="nav-link">Login</Link></li>
-        <li>
-          <Link to="/register" className="nav-link btn btn-primary text-white px-3 py-1">
-            Register
-          </Link>
-        </li>
+        
       </ul>
     </nav>
   </div>
@@ -127,7 +122,7 @@ function LandingPage() {
           <h2 className="mb-4">Contact Us</h2>
           <p className="mb-2">📍 123 Dental Street, Cabuyao City</p>
           <p className="mb-2">📞 +63 912 345 6789</p>
-          <p className="mb-3">✉️ kreativeclinic@email.com</p>
+          <p className="mb-3">✉️ kreativeclinic@gmail.com</p>
 
           {/* Contact Buttons */}
           <div className="d-flex justify-content-center gap-3 mt-3">

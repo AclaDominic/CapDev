@@ -160,49 +160,60 @@ function BookAppointment() {
   </div>
 {/* //----------------------------------------j */}
 
-      {loading && <LoadingSpinner message="Loading available services..." />}
-      {error && <div className="alert alert-danger">{error}</div>}
+    {loading && <LoadingSpinner message="Loading available services..." />}
+{error && <div className="alert alert-danger">{error}</div>}
 
-      {services.length > 0 && (
-        <div className="mt-4">
-          <h5>Available Services:</h5>
-          <ul className="list-group">
-            {services.map((s) => (
-              <li
-                className="list-group-item d-flex justify-content-between align-items-center"
-                key={`${s.id}-${s.type}`}
+{services.length > 0 && (
+  <div className="mt-5">
+  <h5>Available Services:</h5>
+  <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xxl-5 g-3">
+   
+
+      {services.map((s) => (
+        <div className="col" key={`${s.id}-${s.type}`}>
+          <div className="card h-100 shadow-sm">
+            <div className="card-body d-flex flex-column">
+              <div className="mb-2">
+                <div className="fw-semibold">{s.name}</div>
+
+                {s.type === "promo" && (
+                  <div className="small">
+                    <span className="text-muted text-decoration-line-through">
+                      ₱{s.original_price}
+                    </span>{" "}
+                    <span className="text-success">₱{s.promo_price}</span>{" "}
+                    <span className="text-danger">({s.discount_percent}% off)</span>
+                  </div>
+                )}
+
+                {s.type === "special" && (
+                  <div className="small text-info">
+                    ₱{Number(s.price).toLocaleString()}{" "}
+                    <span className="text-muted ms-2">Special Service</span>
+                  </div>
+                )}
+
+                {s.type === "regular" && (
+                  <div className="small text-secondary">
+                    ₱{Number(s.price).toLocaleString()}
+                  </div>
+                )}
+              </div>
+
+              <button
+                className="btn btn-primary btn-sm mt-auto"
+                onClick={() => handleServiceSelect(s)}
               >
-                <div>
-                  <strong>{s.name}</strong>
-                  {s.type === "promo" && (
-                    <div>
-                      <span className="text-muted text-decoration-line-through">
-                        ₱{s.original_price}
-                      </span>{" "}
-                      <span className="text-success">₱{s.promo_price}</span>{" "}
-                      <span className="text-danger">({s.discount_percent}% off)</span>
-                    </div>
-                  )}
-                  {s.type === "special" && (
-                    <div className="text-info">
-                      ₱{Number(s.price).toLocaleString()}{" "}
-                      <span className="text-muted ms-2">Special Service</span>
-                    </div>
-                  )}
-                  {s.type === "regular" && (
-                    <div className="text-secondary">
-                      ₱{Number(s.price).toLocaleString()}
-                    </div>
-                  )}
-                </div>
-                <button className="btn btn-primary btn-sm" onClick={() => handleServiceSelect(s)}>
-                  Select
-                </button>
-              </li>
-            ))}
-          </ul>
+                Select
+              </button>
+            </div>
+          </div>
         </div>
-      )}
+      ))}
+    </div>
+  </div>
+)}
+
 
       {selectedService && (
         <div className="mt-4">

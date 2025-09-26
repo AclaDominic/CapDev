@@ -501,7 +501,7 @@ export default function AdminMonthlyReport() {
           <div className="row g-3 mb-3">
             <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <div className="card h-100 shadow-sm">
-                <div className="card-body text-center">
+               <div className="card-header">
                   <div className="text-muted small">Total Visits</div>
                   <div className="fs-2 fs-md-3 fw-bold text-primary">{data?.totals?.visits ?? 0}</div>
                 </div>
@@ -514,7 +514,7 @@ export default function AdminMonthlyReport() {
             {/* Daily Counts Chart */}
             <div className="col-12 col-lg-6">
               <div className="card h-100 shadow-sm">
-                <div className="card-header">
+                <div className="card-header bg-primary text-white">
                   <h6 className="mb-0">Daily Counts</h6>
                 </div>
                 <div className="card-body">
@@ -533,7 +533,7 @@ export default function AdminMonthlyReport() {
             {/* By Hour Chart */}
             <div className="col-12 col-lg-6">
               <div className="card h-100 shadow-sm">
-                <div className="card-header">
+                <div className="card-header bg-primary text-white">
                   <h6 className="mb-0">By Hour</h6>
                 </div>
                 <div className="card-body">
@@ -541,7 +541,7 @@ export default function AdminMonthlyReport() {
                     <Bar data={hourBarData} options={hourBarOptions} />
                   </div>
                   {hourSummary && (
-                    <small className="text-muted d-block mt-2">
+                    <small className="text-muted d-block mt-2 ">
                       Peak hour: {hourSummary.peakHour}:00 ({hourSummary.peakCount} visits). Avg/hour: {hourSummary.avgPerHour.toFixed(1)}. Tip: Staff up around peak hour.
                     </small>
                   )}
@@ -552,7 +552,7 @@ export default function AdminMonthlyReport() {
             {/* Visit Type Donut Chart */}
             <div className="col-12 col-md-6 col-lg-4">
               <div className="card h-100 shadow-sm">
-                <div className="card-header text-center">
+ <div className="card-header bg-primary text-white">
                   <h6 className="mb-0">Visit Type</h6>
                 </div>
                 <div className="card-body d-flex flex-column align-items-center justify-content-center p-3">
@@ -611,8 +611,8 @@ export default function AdminMonthlyReport() {
             {/* By Service Chart */}
             <div className="col-12 col-md-6 col-lg-8">
               <div className="card h-100 shadow-sm">
-                <div className="card-header">
-                  <h6 className="mb-0">By Service</h6>
+               <div className="card-header bg-primary text-white">
+                <h6 className="mb-0 text-darkblue">By Service</h6>
                 </div>
                 <div className="card-body">
                   <div style={{ height: "300px", position: "relative" }}>

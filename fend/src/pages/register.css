@@ -1,113 +1,164 @@
-/* 🌟 Container Layout */
-.auth-container {
-  display: flex;
-  height: 100vh;
-  width: 100%;
-  font-family: "Poppins", sans-serif;
+/* ========= Register Page — Aqua → Deep Blue Theme ========= */
+:root{
+  --brand: #00b4d8;        /* aqua */
+  --brand-dark: #0077b6;   /* deep blue */
+  --ink: #0f172a;          /* slate-900 */
+  --muted: #6b7280;        /* gray */
+  --ring: rgba(0,180,216,.22);
 }
 
-/* 🌟 Left Section (Logo + Text) */
-.auth-left {
-  flex: 1;
-  background: linear-gradient(to right, #00b4d8, #0077b6);
-  color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 10rem;
-  text-align: center;
+/* Layout shell */
+.auth-container{
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: clamp(20px, 3vw, 40px);
+  min-height: clamp(560px, 85vh, 880px);
+  padding: clamp(16px, 3vw, 32px);
+  border-radius: 20px;
+
+  /* Your brand gradient */
+  background: linear-gradient(to right, var(--brand), var(--brand-dark));
+  color: #fff;
 }
 
-.auth-logo {
-  height: 120px;
-  width: auto;
-  border-radius: 12px;
-  margin-bottom: 1.5rem;
+/* Left side (brand panel) */
+.auth-left{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:flex-start;
+
+  background: rgba(255,255,255,0.10);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 20px;
+
+  padding: clamp(16px, 2.5vw, 32px);
+  position: relative;
+  overflow: hidden;
 }
 
-.auth-title {
-  font-size: 2rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
+.auth-left::after{
+  content:"";
+  position:absolute; inset:-2px;
+  background:
+    radial-gradient(520px 220px at 15% -10%, rgba(255,255,255,.18), transparent 60%),
+    radial-gradient(520px 220px at 120% 110%, rgba(255,255,255,.16), transparent 60%);
+  filter: blur(8px);
+  z-index:-1;
+  border-radius:inherit;
 }
 
-.auth-description {
-  font-size: 1.1rem;
-  max-width: 400px;
+.auth-logo{
+  width:64px; height:64px; object-fit:contain;
+  filter: drop-shadow(0 10px 22px rgba(0,0,0,.22));
+  margin-bottom: 10px;
+}
+
+.auth-title{
+  margin: 6px 0 6px;
+  font-weight: 800;
+  font-size: clamp(1.4rem, 1.1rem + 1.2vw, 2rem);
+}
+
+.auth-description{
+  margin: 0;
+  color: rgba(255,255,255,.92);
   line-height: 1.6;
-  opacity: 0.9;
 }
 
-/* 🌟 Right Section (Form) */
-.auth-right {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* Right side (form card) */
+.auth-right{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.auth-right .card{
+  width: min(560px, 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(15,23,42,.08);
   background: #fff;
-  padding: 2rem;
+  box-shadow: 0 22px 40px rgba(0,0,0,.12);
+  animation: fadeUp .45s ease-out both;
 }
 
-.auth-right .card {
-  width: 100%;
-  max-width: 400px;
+@keyframes fadeUp{
+  from{ opacity:0; transform: translateY(10px); }
+  to  { opacity:1; transform: translateY(0); }
+}
+
+/* Headings inside the card */
+.auth-right h3{
+  font-weight: 800;
+  color: var(--brand-dark);
+}
+
+/* Form controls */
+.form-label{
+  font-weight: 600;
+  color: #334155;
+}
+
+.form-control{
   border-radius: 12px;
-  box-shadow: 0px 2px 12px rgba(4, 163, 236, 0.1);
+  border: 1px solid #cbd5e1;
+  padding: 12px 14px;
+  transition: box-shadow .2s ease, border-color .2s ease;
 }
 
-/* 📱 Responsive Breakpoints */
-@media (max-width: 1024px) {
-  .auth-title {
-    font-size: 1.8rem;
-  }
-  .auth-description {
-    font-size: 1rem;
-  }
+.form-control:focus{
+  border-color: var(--brand);
+  box-shadow: 0 0 0 .25rem var(--ring);
 }
 
-@media (max-width: 768px) {
-  .auth-container {
-    flex-direction: column;
-    height: auto;
-    padding: 1rem;
-  }
-
-  .auth-left {
-    padding: 2rem 1rem;
-  }
-
-  .auth-right {
-    padding: 1rem;
-    width: 100%;
-  }
-
-  .auth-right .card {
-    max-width: 100%;
-    margin-top: 1.5rem;
-  }
+/* Error states stick with Bootstrap classes */
+.is-invalid{
+  border-color: #dc3545 !important;
 }
 
-@media (max-width: 480px) {
-  .auth-logo {
-    height: 90px;
-  }
+/* Primary button */
+.btn.btn-primary{
+  background: linear-gradient(to right, var(--brand), var(--brand-dark));
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  box-shadow: 0 10px 26px rgba(0,119,182,.25);
+  transition: transform .15s ease, filter .15s ease;
+}
 
-  .auth-title {
-    font-size: 1.5rem;
-  }
+.btn.btn-primary:hover{
+  transform: translateY(-1px);
+  filter: brightness(.98);
+}
 
-  .auth-description {
-    font-size: 0.95rem;
-    max-width: 90%;
-  }
+/* “Already have an account?” link */
+.text-primary{
+  color: var(--brand-dark) !important;
+  font-weight: 700;
+}
 
-  .auth-right .card {
-    padding: 1.2rem;
-  }
+.text-primary:hover{
+  text-decoration: underline;
+}
 
-  .btn {
-    font-size: 0.9rem;
-    padding: 0.7rem;
-  }
+/* Info alert tone to match palette */
+.alert-info{
+  color: #084c61;
+  background-color: #e0f7ff;
+  border-color: #b3ecff;
+}
+
+/* Responsive */
+@media (max-width: 992px){
+  .auth-container{ grid-template-columns: 1fr; }
+  .auth-left, .auth-right .card{ border-radius: 16px; }
+}
+
+@media (max-width: 576px){
+  .auth-container{ padding: 12px; border-radius: 12px; }
+  .auth-logo{ width:56px; height:56px; }
 }

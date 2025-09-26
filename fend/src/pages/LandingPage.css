@@ -1,176 +1,152 @@
-/* HEADER */
+/* ===============================
+   Kreative Dental – Landing Page
+   Fullscreen + Responsive
+   Theme: #00b4d8 → #0077b6
+   =============================== */
+:root{
+  --brand: #00b4d8;
+  --brand-dark: #0077b6;
+  --ink: #0f172a;
+  --muted: #667085;
+  --header-h: 64px;          /* tweak if your header is taller */
+}
 
+/* Make the page fill the viewport and avoid horizontal scroll */
+.landing-page{
+  min-height: 100dvh;        /* mobile-safe */
+  width: 100vw;
+  overflow-x: hidden;
+  color: var(--ink);
+  scroll-behavior: smooth;
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(0,180,216,.14), transparent 60%),
+    radial-gradient(900px 500px at 110% 0%, rgba(0,119,182,.12), transparent 60%),
+    linear-gradient(180deg, #ffffff, #f6f9fc);
+}
 
-.site-header {
-  background: #ffffff;
-  border-bottom: 1px solid #ddd;
+/* ---------- Header (sticky, edge-to-edge) ---------- */
+.site-header{
   position: sticky;
   top: 0;
-  z-index: 999;
+  z-index: 50;
+  width: 100%;
+  min-height: var(--header-h);
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(2,6,23,.06);
 }
 
-.logo {
-  font-weight: bold;
-  color: #0077b6;
+/* Logo + brand */
+.site-logo{
+  width: 40px; height: 40px; object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0,119,182,.25));
+}
+.logo-text{
+  font-weight: 800; letter-spacing: .2px;
+  color: var(--brand-dark); font-size: 1.1rem;
 }
 
-.nav-list {
-  list-style: none;
-  padding: 0;
+/* Nav */
+.nav-list{
+  display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
+   list-style: none;
+  padding-left: 0;
   margin: 0;
-  display: flex;
-  gap: 1rem;
-  align-items: center;
+}
+.nav-list .nav-link{
+  color: #334155; font-weight: 600; text-decoration: none;
+  padding: .5rem .75rem; border-radius: .5rem; transition: all .2s ease;
+  
+}
+.nav-list .nav-link:hover{
+  color: var(--brand-dark);
+  background: rgba(0,119,182,.08);
+}
+.nav-list .btn.btn-primary{
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  border: none; box-shadow: 0 8px 22px rgba(0,119,182,.28);
 }
 
-.nav-link {
-  text-decoration: none;
-  font-weight: 500;
-  color: #333;
-  transition: color 0.3s ease;
+/* ---------- Hero (fullscreen section) ---------- */
+.hero-section{
+  min-height: calc(100dvh - var(--header-h)); /* fill remaining viewport below header */
+  display: flex; align-items: center;
+  position: relative;
+  background:
+    radial-gradient(1200px 600px at -10% -20%, rgba(255,255,255,.18), transparent 60%),
+    linear-gradient(to right, var(--brand), var(--brand-dark));
+}
+.hero-section::after{
+  content:""; position:absolute; inset:0;
+  background: radial-gradient(1200px 500px at 120% 120%, rgba(0,0,0,.12), transparent 55%);
+  pointer-events:none;
 }
 
-.nav-link:hover {
-  color: #0077b6;
+/* Hero typography scales with viewport */
+.hero-title{
+  font-weight: 900; line-height: 1.15; letter-spacing: .2px;
+  text-shadow: 0 2px 18px rgba(2,6,23,.15);
+  font-size: clamp(1.8rem, 1.2rem + 2.5vw, 3.2rem);
+}
+.hero-subtitle{
+  opacity: .95; font-weight: 500;
+  font-size: clamp(1rem, .9rem + .4vw, 1.25rem);
+}
+.hero-buttons .btn{
+  border-radius: 12px; padding: .8rem 1.3rem; font-weight: 700;
+}
+.hero-buttons .btn-light{ color: var(--brand-dark); }
+.hero-buttons .btn-outline-light{ border-width: 2px; }
+
+/* ---------- Features ---------- */
+.features-section{ background: #fff; }
+.feature-box{
+  background: #ffffff; border: 1px solid rgba(2,6,23,.06);
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.feature-box:hover{
+  transform: translateY(-4px);
+  border-color: rgba(0,119,182,.25);
+  box-shadow: 0 16px 36px rgba(2,6,23,.08);
 }
 
-/* HERO SECTION */
-.hero-section {
-  background: linear-gradient(to right, #00b4d8, #0077b6);
-  min-height: 350px;
-  padding: 80px 0;
-  text-align: center;
-  background-position: center;
-  background-size: cover;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 100vw;
+/* ---------- About ---------- */
+.about-section{
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  color: #fff; position: relative; overflow: hidden;
+}
+.about-section::before{
+  content:""; position:absolute; inset:-2px;
+  background:
+    radial-gradient(600px 220px at 20% -10%, rgba(255,255,255,.18), transparent 60%),
+    radial-gradient(600px 220px at 120% 110%, rgba(255,255,255,.16), transparent 60%);
+  filter: blur(8px); z-index: 0;
+}
+.about-section > .container{ position: relative; z-index: 1; }
+
+/* ---------- Contact ---------- */
+.contact-section .btn{ border-radius: 12px; font-weight: 700; }
+.facebook-btn{
+  border-width: 2px;
+  transition: transform .15s ease, background .15s ease, color .15s ease;
+}
+.facebook-btn:hover{ transform: translateY(-2px); background: var(--brand-dark); color: #fff; }
+
+/* ---------- Footer ---------- */
+footer{ background: linear-gradient(180deg, #0b3651, #0a2a3f); color: #fff; }
+
+/* ---------- Utilities ---------- */
+.shadow-soft{ box-shadow: 0 12px 28px rgba(2,6,23,.08); }
+
+/* ---------- Responsiveness ---------- */
+@media (max-width: 992px){
+  .nav-list{ gap: .5rem !important; }
 }
 
-.hero-title {
-  font-size: 2.5rem;
-  font-weight: bold;
-}
-
-.hero-subtitle {
-  font-size: 1.25rem;
-  margin-top: 10px;
-  opacity: 0.9;
-}
-
-.hero-buttons .btn {
-  border-radius: 30px;
-  font-size: 1.1rem;
-}
-
-/* FEATURE SECTION */
-.feature-box {
-  background: #fff;
-  border-radius: 15px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.feature-box:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-/* LOGO */
-.site-logo {
-  height: 40px;
-  width: auto;
-  border-radius: 5px;
-}
-
-.logo-text {
-  font-weight: bold;
-  font-size: 1.2rem;
-  color: #0077b6;
-}
-
- .about-section{
-  background: linear-gradient(to right, #02738a, #38b7fc);
-  color: white;
-
- }
-/* ===================== */
-/* RESPONSIVE DESIGN */
-/* ===================== */
-
-/* For tablets (max-width 991px) */
-@media (max-width: 991px) {
-  .hero-title {
-    font-size: 2rem;
-  }
-
-  .hero-subtitle {
-    font-size: 1.1rem;
-  }
-
-  .site-logo {
-    height: 35px;
-  }
-
-  .nav-list {
-    gap: 0.5rem;
-    font-size: 0.95rem;
-  }
-}
-
-/* For mobile (max-width 768px) */
-@media (max-width: 768px) {
-  .site-header .container {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .nav-list {
-    flex-wrap: wrap;
-    justify-content: center;
-    width: 100%;
-    margin-top: 0.5rem;
-  }
-
-  .hero-section {
-    padding: 60px 15px;
-    min-height: 300px;
-  }
-
-  .hero-title {
-    font-size: 1.8rem;
-  }
-
-  .hero-subtitle {
-    font-size: 1rem;
-  }
-}
-
-/* For very small screens (max-width 480px) */
-@media (max-width: 480px) {
-  .hero-title {
-    font-size: 1.5rem;
-  }
-
-  .hero-subtitle {
-    font-size: 0.95rem;
-  }
-
-  .hero-buttons .btn {
-    font-size: 1rem;
-    padding: 8px 16px;
-  }
-
-  .feature-box {
-    padding: 15px;
-  }
-
-  .logo-text {
-    font-size: 1rem;
-  }
-
-  .site-logo {
-    height: 30px;
-  }
+@media (max-width: 576px){
+  .site-header .container{ padding-inline: .75rem; }
+  .logo-text{ display: none; } /* compact header on small screens */
+  .hero-section{ min-height: calc(100dvh - var(--header-h)); }
+  .hero-buttons .btn{ width: 100%; max-width: 360px; margin-bottom: .5rem; }
 }
