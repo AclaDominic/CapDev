@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import api from "../../api/api";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import HmoPicker from "../../components/HmoPicker";
+import ServiceSelectionModal from "../../components/ServiceSelectionModal";
 // date helpers
 function todayStr() {
   const d = new Date();
@@ -26,6 +27,7 @@ function BookAppointment() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showServiceModal, setShowServiceModal] = useState(false);
 
   const [selectedService, setSelectedService] = useState(null);
   const [availableSlots, setAvailableSlots] = useState([]);
@@ -92,7 +94,11 @@ function BookAppointment() {
     setPaymentMethod("cash");
     setPatientHmoId(null); // reset HMO when date changes
     setBookingMessage("");
-    if (date) fetchServices(date);
+    setShowServiceModal(false);
+    if (date) {
+      fetchServices(date);
+      setShowServiceModal(true);
+    }
   };
 
   const handleServiceSelect = (service) => {
@@ -100,6 +106,7 @@ function BookAppointment() {
     fetchSlots(service.id);
     setSelectedSlot("");
     setBookingMessage("");
+    setShowServiceModal(false);
   };
 
   const handlePaymentChange = (e) => {
@@ -160,59 +167,58 @@ function BookAppointment() {
   </div>
 {/* //----------------------------------------j */}
 
-    {loading && <LoadingSpinner message="Loading available services..." />}
-{error && <div className="alert alert-danger">{error}</div>}
-
-{services.length > 0 && (
-  <div className="mt-5">
-  <h5>Available Services:</h5>
-  <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xxl-5 g-3">
-   
-
-      {services.map((s) => (
-        <div className="col" key={`${s.id}-${s.type}`}>
-          <div className="card h-100 shadow-sm">
-            <div className="card-body d-flex flex-column">
-              <div className="mb-2">
-                <div className="fw-semibold">{s.name}</div>
-
-                {s.type === "promo" && (
-                  <div className="small">
-                    <span className="text-muted text-decoration-line-through">
-                      ₱{s.original_price}
-                    </span>{" "}
-                    <span className="text-success">₱{s.promo_price}</span>{" "}
-                    <span className="text-danger">({s.discount_percent}% off)</span>
-                  </div>
-                )}
-
-                {s.type === "special" && (
-                  <div className="small text-info">
-                    ₱{Number(s.price).toLocaleString()}{" "}
-                    <span className="text-muted ms-2">Special Service</span>
-                  </div>
-                )}
-
-                {s.type === "regular" && (
-                  <div className="small text-secondary">
-                    ₱{Number(s.price).toLocaleString()}
-                  </div>
-                )}
-              </div>
-
-              <button
-                className="btn btn-primary btn-sm mt-auto"
-                onClick={() => handleServiceSelect(s)}
-              >
-                Select
-              </button>
-            </div>
-          </div>
+    {selectedDate && !selectedService && (
+      <div className="mt-4">
+        <div className="alert alert-info d-flex align-items-center" role="alert">
+          <i className="bi bi-info-circle me-2"></i>
+          <span>
+            Date selected: <strong>{new Date(selectedDate).toLocaleDateString('en-US', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}</strong>
+          </span>
         </div>
-      ))}
-    </div>
-  </div>
-)}
+        <div className="text-center">
+          <button 
+            className="btn btn-primary btn-lg"
+            onClick={() => setShowServiceModal(true)}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Loading Services...
+              </>
+            ) : (
+              <>
+                <i className="bi bi-list-ul me-2"></i>
+                View Available Services
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    )}
+
+    {selectedService && (
+      <div className="mt-4">
+        <div className="alert alert-success d-flex align-items-center" role="alert">
+          <i className="bi bi-check-circle me-2"></i>
+          <span>
+            Selected: <strong>{selectedService.name}</strong> - ₱{Number(selectedService.price || selectedService.promo_price).toLocaleString()}
+          </span>
+          <button 
+            className="btn btn-outline-success btn-sm ms-auto"
+            onClick={() => setShowServiceModal(true)}
+          >
+            <i className="bi bi-pencil me-1"></i>
+            Change
+          </button>
+        </div>
+      </div>
+    )}
 
 
       {selectedService && (
@@ -271,6 +277,18 @@ function BookAppointment() {
           {bookingMessage && <div className="alert alert-info mt-3">{bookingMessage}</div>}
         </div>
       )}
+
+      {/* Service Selection Modal */}
+      <ServiceSelectionModal
+        isOpen={showServiceModal}
+        onClose={() => setShowServiceModal(false)}
+        services={services}
+        loading={loading}
+        error={error}
+        onServiceSelect={handleServiceSelect}
+        selectedDate={selectedDate}
+        selectedService={selectedService}
+      />
     </div>
   );
 }
