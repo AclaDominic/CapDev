@@ -18,22 +18,18 @@ class GoalController extends Controller
             'period_type' => ['required', Rule::in(['month', 'promo'])],
             'period_start' => ['required', 'date'], // expect YYYY-MM-01 for month, or specific date for promo
             'period_end' => ['nullable', 'date'], // required for promo type
-            'metric' => ['required', Rule::in(['total_visits', 'package_availment', 'service_availment', 'promo_availment'])],
+            'metric' => ['required', Rule::in(['total_visits', 'service_availment', 'package_promo_availment'])],
             'target_value' => ['required', 'integer', 'min:1'],
             'service_id' => ['nullable', 'integer', 'exists:services,id'], // required for service_availment
-            'package_id' => ['nullable', 'integer', 'exists:services,id'], // required for package_availment
-            'promo_id' => ['nullable', 'integer', 'exists:service_discounts,id'], // required for promo_availment
+            'package_promo_id' => ['nullable', 'integer', 'exists:services,id'], // required for package_promo_availment
         ]);
 
         // Additional validation based on metric type
         if ($validated['metric'] === 'service_availment' && !$validated['service_id']) {
             return response()->json(['message' => 'Service ID is required for service availment metric'], 422);
         }
-        if ($validated['metric'] === 'package_availment' && !$validated['package_id']) {
-            return response()->json(['message' => 'Package ID is required for package availment metric'], 422);
-        }
-        if ($validated['metric'] === 'promo_availment' && !$validated['promo_id']) {
-            return response()->json(['message' => 'Promo ID is required for promo availment metric'], 422);
+        if ($validated['metric'] === 'package_promo_availment' && !$validated['package_promo_id']) {
+            return response()->json(['message' => 'Package/Promo ID is required for package/promo availment metric'], 422);
         }
         if ($validated['period_type'] === 'promo' && !$validated['period_end']) {
             return response()->json(['message' => 'Period end is required for promo period type'], 422);
@@ -57,8 +53,8 @@ class GoalController extends Controller
             'status' => 'active',
             'created_by' => $request->user()->id,
             'service_id' => $validated['service_id'] ?? null,
-            'package_id' => $validated['package_id'] ?? null,
-            'promo_id' => $validated['promo_id'] ?? null,
+            'package_id' => $validated['package_promo_id'] ?? null,
+            'promo_id' => null, // No longer used
         ]);
 
         // If the goal is for the current period, initialize a snapshot that
@@ -161,8 +157,8 @@ class GoalController extends Controller
                     ->whereBetween('start_time', [$periodStart, $effectiveEnd])
                     ->count();
                     
-            case 'package_availment':
-                // Count visits for the package service itself
+            case 'package_promo_availment':
+                // Count visits for the package/promo service itself
                 $packageVisits = DB::table('patient_visits')
                     ->whereNotNull('start_time')
                     ->where('service_id', $goal->package_id)
@@ -178,18 +174,6 @@ class GoalController extends Controller
                     ->count();
                     
                 return $packageVisits + $bundleVisits;
-                
-            case 'promo_availment':
-                // Get the promo details
-                $promo = DB::table('service_discounts')->where('id', $goal->promo_id)->first();
-                if (!$promo) return 0;
-                
-                // Count visits for the service during the promo period
-                return DB::table('patient_visits')
-                    ->whereNotNull('start_time')
-                    ->where('service_id', $promo->service_id)
-                    ->whereBetween('start_time', [$periodStart, $effectiveEnd])
-                    ->count();
                     
             default:
                 return 0;

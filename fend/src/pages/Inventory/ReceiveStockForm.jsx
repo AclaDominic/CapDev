@@ -108,12 +108,12 @@ export default function ReceiveStockForm({
     (item?.type !== "drug" || (form.lot_number && form.expiry_date));
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit}>
       {/* Item */}
-      <label className="block">
-        <span className="block text-sm mb-1">Item</span>
+      <div className="mb-3">
+        <label className="form-label">Item *</label>
         <select
-          className="border rounded px-3 py-2 w-full"
+          className="form-select"
           value={form.item_id}
           onChange={(e) => handle("item_id", e.target.value)}
           required
@@ -125,14 +125,14 @@ export default function ReceiveStockForm({
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="row mb-3">
         {/* Quantity received */}
-        <label className="block">
-          <span className="block text-sm mb-1">Quantity received</span>
+        <div className="col-md-4">
+          <label className="form-label">Quantity received *</label>
           <input
-            className="border rounded px-3 py-2 w-full"
+            className="form-control"
             type="number"
             step="0.001"
             min="0.001"
@@ -141,29 +141,28 @@ export default function ReceiveStockForm({
             onChange={(e) => handle("qty_received", e.target.value)}
             required
           />
-        </label>
+        </div>
 
         {/* Date & time received */}
-        <label className="block">
-          <span className="block text-sm mb-1">Date & time received</span>
+        <div className="col-md-4">
+          <label className="form-label">Date & time received *</label>
           <input
-            className="border rounded px-3 py-2 w-full"
+            className="form-control"
             type="datetime-local"
             value={form.received_at}
             onChange={(e) => handle("received_at", e.target.value)}
             required
           />
-          <span className="text-xs text-gray-500">
-            Must be within the allowed backdate window (≤ 24 hours; not in the
-            future).
-          </span>
-        </label>
+          <div className="form-text">
+            Must be within the allowed backdate window (≤ 24 hours; not in the future).
+          </div>
+        </div>
 
         {/* Cost per unit */}
-        <label className="block">
-          <span className="block text-sm mb-1">Cost per unit (optional)</span>
+        <div className="col-md-4">
+          <label className="form-label">Cost per unit (optional)</label>
           <input
-            className="border rounded px-3 py-2 w-full"
+            className="form-control"
             type="number"
             step="0.01"
             min="0"
@@ -171,284 +170,296 @@ export default function ReceiveStockForm({
             value={form.cost_per_unit}
             onChange={(e) => handle("cost_per_unit", e.target.value)}
           />
-        </label>
+        </div>
       </div>
 
       {item?.type === "drug" && (
-        <div className="text-xs text-gray-600">
-          For <b>drugs</b>, <b>Lot number</b> and <b>Expiry date</b> are
-          required.
+        <div className="alert alert-info mb-3">
+          <small>For <strong>drugs</strong>, <strong>Lot number</strong> and <strong>Expiry date</strong> are required.</small>
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="row mb-3">
         {/* Lot number */}
-        <label className="block">
-          <span className="block text-sm mb-1">
+        <div className="col-md-4">
+          <label className="form-label">
             Lot number{item?.type === "drug" ? " *" : ""}
-          </span>
+          </label>
           <input
-            className="border rounded px-3 py-2 w-full"
+            className="form-control"
             placeholder="e.g., LOT-ABC-123"
             value={form.lot_number}
             onChange={(e) => handle("lot_number", e.target.value)}
             required={item?.type === "drug"}
           />
-        </label>
+        </div>
 
         {/* Batch number (now required) */}
-        <label className="block">
-          <span className="block text-sm mb-1">Batch number *</span>
+        <div className="col-md-4">
+          <label className="form-label">Batch number *</label>
           <input
-            className="border rounded px-3 py-2 w-full"
+            className="form-control"
             placeholder="e.g., BATCH-2025-09"
             value={form.batch_number}
             onChange={(e) => handle("batch_number", e.target.value)}
             required
           />
-        </label>
+        </div>
 
         {/* Expiry date */}
-        <label className="block">
-          <span className="block text-sm mb-1">
+        <div className="col-md-4">
+          <label className="form-label">
             Expiry date{item?.type === "drug" ? " *" : ""}
-          </span>
+          </label>
           <input
-            className="border rounded px-3 py-2 w-full"
+            className="form-control"
             type="date"
             min={todayYmd()} // must not be in the past
             value={form.expiry_date}
             onChange={(e) => handle("expiry_date", e.target.value)}
             required={item?.type === "drug"}
           />
-          <span className="text-xs text-gray-500">
-            If the item is a <b>drug</b>, expiry is required and must be a{" "}
-            <b>future</b> date. For non-drugs, expiry is optional.
-          </span>
-        </label>
+          <div className="form-text">
+            If the item is a <strong>drug</strong>, expiry is required and must be a <strong>future</strong> date.
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="row mb-3">
         {/* Invoice no. */}
-        <label className="block">
-          <span className="block text-sm mb-1">Invoice no. (optional)</span>
+        <div className="col-md-4">
+          <label className="form-label">Invoice no. (optional)</label>
           <input
-            className="border rounded px-3 py-2 w-full"
+            className="form-control"
             placeholder="e.g., INV-000123"
             value={form.invoice_no}
             onChange={(e) => handle("invoice_no", e.target.value)}
           />
-        </label>
+        </div>
 
         {/* Invoice date */}
-        <label className="block">
-          <span className="block text-sm mb-1">Invoice date (optional)</span>
+        <div className="col-md-4">
+          <label className="form-label">Invoice date (optional)</label>
           <input
-            className="border rounded px-3 py-2 w-full"
+            className="form-control"
             type="date"
             value={form.invoice_date}
             onChange={(e) => handle("invoice_date", e.target.value)}
           />
-        </label>
+        </div>
 
         {/* Pack size */}
-        <label className="block">
-          <span className="block text-sm mb-1">Pack size note (optional)</span>
+        <div className="col-md-4">
+          <label className="form-label">Pack size note (optional)</label>
           <input
-            className="border rounded px-3 py-2 w-full"
+            className="form-control"
             placeholder="e.g., 1 box = 100 pcs"
             value={form.pack_size}
             onChange={(e) => handle("pack_size", e.target.value)}
           />
-        </label>
+        </div>
       </div>
 
       {/* Supplier with Add button */}
-      <div>
-        <label className="block">
-          <span className="block text-sm mb-1">Supplier (optional)</span>
-          <div className="flex gap-2">
-            <select
-              className="border rounded px-3 py-2 w-full"
-              value={form.supplier_id}
-              onChange={(e) => handle("supplier_id", e.target.value)}
-            >
-              <option value="">No supplier</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="border rounded px-3"
-              onClick={() => setShowSupplierModal(true)}
-              title="Add new supplier"
-            >
-              + Add
-            </button>
-          </div>
-          <span className="text-xs text-gray-500">
-            Linking a supplier improves audit trail and costing.
-          </span>
-        </label>
+      <div className="mb-3">
+        <label className="form-label">Supplier (optional)</label>
+        <div className="input-group">
+          <select
+            className="form-select"
+            value={form.supplier_id}
+            onChange={(e) => handle("supplier_id", e.target.value)}
+          >
+            <option value="">No supplier</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={() => setShowSupplierModal(true)}
+            title="Add new supplier"
+          >
+            + Add
+          </button>
+        </div>
+        <div className="form-text">
+          Linking a supplier improves audit trail and costing.
+        </div>
       </div>
 
       {/* Notes */}
-      <label className="block">
-        <span className="block text-sm mb-1">Notes (optional)</span>
+      <div className="mb-3">
+        <label className="form-label">Notes (optional)</label>
         <textarea
-          className="border rounded px-3 py-2 w-full"
-          rows={2}
+          className="form-control"
+          rows={3}
           placeholder="Additional remarks…"
           value={form.notes}
           onChange={(e) => handle("notes", e.target.value)}
         />
-      </label>
+      </div>
 
-      <button disabled={!canSubmit} className="border rounded px-3 py-2">
-        {saving ? "Receiving…" : "Receive Stock"}
-      </button>
+      <div className="d-flex justify-content-end">
+        <button 
+          type="submit"
+          disabled={!canSubmit} 
+          className="btn btn-primary"
+        >
+          {saving ? "Receiving…" : "Receive Stock"}
+        </button>
+      </div>
 
-      {/* Simple modal (no external deps). If you use react-bootstrap, replace with <Modal> */}
+      {/* Supplier Modal */}
       {showSupplierModal && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+          className="modal fade show d-block"
           role="dialog"
           aria-modal="true"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2100,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)'
+          }}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setShowSupplierModal(false);
+          }}
         >
-          <div className="bg-white rounded shadow-lg w-full max-w-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold">Add Supplier</h3>
-              <button
-                type="button"
-                className="border rounded px-2 py-1"
-                onClick={() => setShowSupplierModal(false)}
-                aria-label="Close"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 max-h-[70vh] overflow-auto pr-1">
-              <label className="block">
-                <span className="block text-sm mb-1">Name *</span>
-                <input
-                  className="border rounded px-3 py-2 w-full"
-                  value={newSupplier.name}
-                  onChange={(e) =>
-                    setNewSupplier((s) => ({ ...s, name: e.target.value }))
-                  }
-                  required
-                />
-              </label>
-
-              <div className="grid grid-cols-2 gap-2">
-                <label className="block">
-                  <span className="block text-sm mb-1">Contact person</span>
-                  <input
-                    className="border rounded px-3 py-2 w-full"
-                    value={newSupplier.contact_person || ""}
-                    onChange={(e) =>
-                      setNewSupplier((s) => ({
-                        ...s,
-                        contact_person: e.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="block">
-                  <span className="block text-sm mb-1">Phone</span>
-                  <input
-                    className="border rounded px-3 py-2 w-full"
-                    value={newSupplier.phone || ""}
-                    onChange={(e) =>
-                      setNewSupplier((s) => ({ ...s, phone: e.target.value }))
-                    }
-                  />
-                </label>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Add Supplier</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowSupplierModal(false)}
+                  aria-label="Close"
+                ></button>
               </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label className="form-label">Name *</label>
+                  <input
+                    className="form-control"
+                    value={newSupplier.name}
+                    onChange={(e) =>
+                      setNewSupplier((s) => ({ ...s, name: e.target.value }))
+                    }
+                    required
+                  />
+                </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <label className="block">
-                  <span className="block text-sm mb-1">Email</span>
-                  <input
-                    type="email"
-                    className="border rounded px-3 py-2 w-full"
-                    value={newSupplier.email || ""}
+                <div className="row mb-3">
+                  <div className="col-md-6">
+                    <label className="form-label">Contact person</label>
+                    <input
+                      className="form-control"
+                      value={newSupplier.contact_person || ""}
+                      onChange={(e) =>
+                        setNewSupplier((s) => ({
+                          ...s,
+                          contact_person: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Phone</label>
+                    <input
+                      className="form-control"
+                      value={newSupplier.phone || ""}
+                      onChange={(e) =>
+                        setNewSupplier((s) => ({ ...s, phone: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="row mb-3">
+                  <div className="col-md-6">
+                    <label className="form-label">Email</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      value={newSupplier.email || ""}
+                      onChange={(e) =>
+                        setNewSupplier((s) => ({ ...s, email: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Address</label>
+                    <input
+                      className="form-control"
+                      value={newSupplier.address || ""}
+                      onChange={(e) =>
+                        setNewSupplier((s) => ({ ...s, address: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label">Notes</label>
+                  <textarea
+                    className="form-control"
+                    rows={3}
+                    value={newSupplier.notes || ""}
                     onChange={(e) =>
-                      setNewSupplier((s) => ({ ...s, email: e.target.value }))
+                      setNewSupplier((s) => ({ ...s, notes: e.target.value }))
                     }
                   />
-                </label>
-                <label className="block">
-                  <span className="block text-sm mb-1">Address</span>
-                  <input
-                    className="border rounded px-3 py-2 w-full"
-                    value={newSupplier.address || ""}
-                    onChange={(e) =>
-                      setNewSupplier((s) => ({ ...s, address: e.target.value }))
-                    }
-                  />
-                </label>
+                </div>
               </div>
-
-              <label className="block">
-                <span className="block text-sm mb-1">Notes</span>
-                <textarea
-                  className="border rounded px-3 py-2 w-full"
-                  rows={2}
-                  value={newSupplier.notes || ""}
-                  onChange={(e) =>
-                    setNewSupplier((s) => ({ ...s, notes: e.target.value }))
-                  }
-                />
-              </label>
-            </div>
-
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                type="button"
-                className="border rounded px-3 py-2"
-                onClick={() => setShowSupplierModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="border rounded px-3 py-2"
-                disabled={savingSupplier || !newSupplier.name}
-                onClick={async () => {
-                  try {
-                    setSavingSupplier(true);
-                    const { data } = await api.post(
-                      "/api/inventory/suppliers",
-                      newSupplier
-                    );
-                    // add to list and select it
-                    setSuppliers((prev) => [...prev, data]);
-                    setForm((s) => ({ ...s, supplier_id: String(data.id) }));
-                    setShowSupplierModal(false);
-                    setNewSupplier({
-                      name: "",
-                      contact_person: "",
-                      phone: "",
-                      email: "",
-                      address: "",
-                      notes: "",
-                    });
-                  } catch (err) {
-                    alert(
-                      err?.response?.data?.message || "Failed to add supplier"
-                    );
-                  } finally {
-                    setSavingSupplier(false);
-                  }
-                }}
-              >
-                {savingSupplier ? "Saving…" : "Save Supplier"}
-              </button>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowSupplierModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={savingSupplier || !newSupplier.name}
+                  onClick={async () => {
+                    try {
+                      setSavingSupplier(true);
+                      const { data } = await api.post(
+                        "/api/inventory/suppliers",
+                        newSupplier
+                      );
+                      // add to list and select it
+                      setSuppliers((prev) => [...prev, data]);
+                      setForm((s) => ({ ...s, supplier_id: String(data.id) }));
+                      setShowSupplierModal(false);
+                      setNewSupplier({
+                        name: "",
+                        contact_person: "",
+                        phone: "",
+                        email: "",
+                        address: "",
+                        notes: "",
+                      });
+                    } catch (err) {
+                      alert(
+                        err?.response?.data?.message || "Failed to add supplier"
+                      );
+                    } finally {
+                      setSavingSupplier(false);
+                    }
+                  }}
+                >
+                  {savingSupplier ? "Saving…" : "Save Supplier"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -48,11 +48,11 @@ export default function ConsumeStockForm({ items = [], user = null, onConsumed }
   };
 
   return (
-    <form onSubmit={submit} className="space-y-3">
-      <label className="block">
-        <span className="block text-sm mb-1">Item</span>
+    <form onSubmit={submit}>
+      <div className="mb-3">
+        <label className="form-label">Item *</label>
         <select
-          className="border rounded px-3 py-2 w-full"
+          className="form-select"
           value={form.item_id}
           onChange={(e) => handle("item_id", e.target.value)}
           required
@@ -64,13 +64,13 @@ export default function ConsumeStockForm({ items = [], user = null, onConsumed }
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <label className="block">
-          <span className="block text-sm mb-1">Quantity</span>
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <label className="form-label">Quantity *</label>
           <input
-            className="border rounded px-3 py-2 w-full"
+            className="form-control"
             type="number"
             step="0.001"
             min="0.001"
@@ -79,31 +79,31 @@ export default function ConsumeStockForm({ items = [], user = null, onConsumed }
             onChange={(e) => handle("quantity", e.target.value)}
             required
           />
-        </label>
+        </div>
 
         {/* Reference */}
-        {isStaff ? (
-          <label className="block">
-            <span className="block text-sm mb-1">Visit ID (required for staff)</span>
-            <input
-              className="border rounded px-3 py-2 w-full"
-              type="number"
-              min="1"
-              placeholder="Finished Visit ID"
-              value={form.ref_id}
-              onChange={(e) => handle("ref_id", e.target.value)}
-              required
-            />
-            <span className="text-xs text-gray-500">
-              Backend requires a <b>finished</b> visit for staff consumption.
-            </span>
-          </label>
-        ) : (
-          <div className="grid grid-cols-2 gap-2">
-            <label className="block">
-              <span className="block text-sm mb-1">Reference type (optional)</span>
+        <div className="col-md-6">
+          {isStaff ? (
+            <div>
+              <label className="form-label">Visit ID (required for staff) *</label>
+              <input
+                className="form-control"
+                type="number"
+                min="1"
+                placeholder="Finished Visit ID"
+                value={form.ref_id}
+                onChange={(e) => handle("ref_id", e.target.value)}
+                required
+              />
+              <div className="form-text">
+                Backend requires a <strong>finished</strong> visit for staff consumption.
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="form-label">Reference type (optional)</label>
               <select
-                className="border rounded px-3 py-2 w-full"
+                className="form-select"
                 value={form.ref_type}
                 onChange={(e) => handle("ref_type", e.target.value)}
               >
@@ -111,38 +111,45 @@ export default function ConsumeStockForm({ items = [], user = null, onConsumed }
                 <option value="visit">Visit</option>
                 <option value="appointment">Appointment</option>
               </select>
-            </label>
-
-            {form.ref_type && (
-              <label className="block">
-                <span className="block text-sm mb-1">
-                  {form.ref_type === "visit" ? "Visit ID" : "Appointment ID"}
-                </span>
-                <input
-                  className="border rounded px-3 py-2 w-full"
-                  type="number"
-                  min="1"
-                  placeholder="e.g., 123"
-                  value={form.ref_id}
-                  onChange={(e) => handle("ref_id", e.target.value)}
-                />
-              </label>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
 
-      <label className="block">
-        <span className="block text-sm mb-1">Notes (optional)</span>
+      {!isStaff && form.ref_type && (
+        <div className="row mb-3">
+          <div className="col-md-6">
+            <label className="form-label">
+              {form.ref_type === "visit" ? "Visit ID" : "Appointment ID"}
+            </label>
+            <input
+              className="form-control"
+              type="number"
+              min="1"
+              placeholder="e.g., 123"
+              value={form.ref_id}
+              onChange={(e) => handle("ref_id", e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="mb-3">
+        <label className="form-label">Notes (optional)</label>
         <textarea
-          className="border rounded px-3 py-2 w-full"
-          rows={2}
+          className="form-control"
+          rows={3}
+          placeholder="Additional notes..."
           value={form.notes}
           onChange={(e) => handle("notes", e.target.value)}
         />
-      </label>
+      </div>
 
-      <button className="border rounded px-3 py-2">Consume</button>
+      <div className="d-flex justify-content-end">
+        <button type="submit" className="btn btn-warning">
+          Consume Stock
+        </button>
+      </div>
     </form>
   );
 }

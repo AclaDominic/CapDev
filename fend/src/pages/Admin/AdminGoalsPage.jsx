@@ -8,39 +8,25 @@ export default function AdminGoalsPage() {
   const [metric, setMetric] = useState("total_visits");
   const [target, setTarget] = useState(100);
   const [serviceId, setServiceId] = useState("");
-  const [packageId, setPackageId] = useState("");
-  const [promoId, setPromoId] = useState("");
+  const [packagePromoId, setPackagePromoId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [goals, setGoals] = useState([]);
   const [services, setServices] = useState([]);
   const [packages, setPackages] = useState([]);
-  const [promos, setPromos] = useState([]);
 
-  // Load services, packages, and promos
+  // Load services and packages
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [servicesRes, promosRes] = await Promise.all([
-          api.get("/api/services"),
-          api.get("/api/service-discounts")
-        ]);
+        const servicesRes = await api.get("/api/services");
         
         setServices(servicesRes.data || []);
         
-        // Filter promos to show only ongoing/future ones
-        const allPromos = promosRes.data || [];
-        const activePromos = allPromos.filter(promo => {
-          const today = new Date();
-          const endDate = new Date(promo.end_date);
-          return endDate >= today; // Show if end date is today or in the future
-        });
-        setPromos(activePromos);
-        
-        // Filter services that have bundle items (packages) - we'll show all packages
-        // since packages don't have time limits, they're always available
+        // Filter services that have bundle items (packages/promos)
+        // Since packages and promos are both marked as special services
         const packageServices = servicesRes.data?.filter(service => 
-          service.bundleItems && service.bundleItems.length > 0
+          service.is_special || (service.bundleItems && service.bundleItems.length > 0)
         ) || [];
         setPackages(packageServices);
       } catch (e) {
@@ -90,12 +76,8 @@ export default function AdminGoalsPage() {
         payload.service_id = Number(serviceId);
       }
 
-      if (metric === "package_availment" && packageId) {
-        payload.package_id = Number(packageId);
-      }
-
-      if (metric === "promo_availment" && promoId) {
-        payload.promo_id = Number(promoId);
+      if (metric === "package_promo_availment" && packagePromoId) {
+        payload.package_promo_id = Number(packagePromoId);
       }
 
       await api.post("/api/goals", payload);
@@ -104,8 +86,7 @@ export default function AdminGoalsPage() {
       // Reset form
       setMetric("total_visits");
       setServiceId("");
-      setPackageId("");
-      setPromoId("");
+      setPackagePromoId("");
       setPeriodEnd("");
       setTarget(100);
     } catch (e) {
@@ -152,8 +133,7 @@ export default function AdminGoalsPage() {
     switch (metric) {
       case "total_visits": return "Total Visits";
       case "service_availment": return "Service Availment";
-      case "package_availment": return "Package Availment";
-      case "promo_availment": return "Promo Availment";
+      case "package_promo_availment": return "Package/Promo Availment";
       default: return metric;
     }
   };
@@ -163,12 +143,9 @@ export default function AdminGoalsPage() {
       case "service_availment":
         const service = services.find(s => s.id === goal.service_id);
         return service ? `${service.name}` : "Unknown Service";
-      case "package_availment":
+      case "package_promo_availment":
         const package_ = packages.find(p => p.id === goal.package_id);
-        return package_ ? `${package_.name}` : "Unknown Package";
-      case "promo_availment":
-        const promo = promos.find(p => p.id === goal.promo_id);
-        return promo ? `${promo.service?.name || "Unknown Service"} Promo` : "Unknown Promo";
+        return package_ ? `${package_.name}` : "Unknown Package/Promo";
       default:
         return "";
     }
@@ -219,8 +196,7 @@ export default function AdminGoalsPage() {
               >
                 <option value="total_visits">Total Visits</option>
                 <option value="service_availment">Service Availment</option>
-                <option value="package_availment">Package Availment</option>
-                <option value="promo_availment">Promo Availment</option>
+                <option value="package_promo_availment">Package/Promo Availment</option>
               </select>
             </div>
 
@@ -279,38 +255,19 @@ export default function AdminGoalsPage() {
               </div>
             )}
 
-            {metric === "package_availment" && (
+            {metric === "package_promo_availment" && (
               <div className="col-12 col-md-6">
-                <label className="form-label">Package</label>
+                <label className="form-label">Package/Promo</label>
                 <select 
                   className="form-select" 
-                  value={packageId} 
-                  onChange={(e) => setPackageId(e.target.value)}
+                  value={packagePromoId} 
+                  onChange={(e) => setPackagePromoId(e.target.value)}
                   required
                 >
-                  <option value="">Select a package...</option>
+                  <option value="">Select a package/promo...</option>
                   {packages.map(package_ => (
                     <option key={package_.id} value={package_.id}>
                       {package_.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {metric === "promo_availment" && (
-              <div className="col-12 col-md-6">
-                <label className="form-label">Promo</label>
-                <select 
-                  className="form-select" 
-                  value={promoId} 
-                  onChange={(e) => setPromoId(e.target.value)}
-                  required
-                >
-                  <option value="">Select a promo...</option>
-                  {promos.map(promo => (
-                    <option key={promo.id} value={promo.id}>
-                      {promo.service?.name || "Unknown Service"} - {promo.start_date} to {promo.end_date}
                     </option>
                   ))}
                 </select>

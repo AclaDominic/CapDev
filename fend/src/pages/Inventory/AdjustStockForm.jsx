@@ -123,12 +123,12 @@ export default function AdjustStockForm({ items = [], onAdjusted, onNeedReceive 
   };
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit}>
       {/* Item */}
-      <label className="block">
-        <span className="block text-sm mb-1">Item</span>
+      <div className="mb-3">
+        <label className="form-label">Item *</label>
         <select
-          className="border rounded px-3 py-2 w-full"
+          className="form-select"
           value={form.item_id}
           onChange={(e) => handle("item_id", e.target.value)}
           required
@@ -140,15 +140,15 @@ export default function AdjustStockForm({ items = [], onAdjusted, onNeedReceive 
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
       {/* Batch (dropdown) */}
-      <label className="block">
-        <span className="block text-sm mb-1">
-          Batch {loadingBatches && <span className="text-xs text-gray-500">(loading…)</span>}
-        </span>
+      <div className="mb-3">
+        <label className="form-label">
+          Batch {loadingBatches && <span className="text-muted small">(loading…)</span>}
+        </label>
         <select
-          className="border rounded px-3 py-2 w-full"
+          className="form-select"
           value={form.batch_id}
           onChange={(e) => handle("batch_id", e.target.value)}
           required
@@ -170,11 +170,11 @@ export default function AdjustStockForm({ items = [], onAdjusted, onNeedReceive 
 
         {/* Helper to create a batch via Receive */}
         {form.item_id && batches.length === 0 && !loadingBatches && (
-          <div className="text-xs text-gray-600 mt-2">
+          <div className="form-text">
             No batches yet.{" "}
             <button
               type="button"
-              className="underline"
+              className="btn btn-link p-0 text-decoration-underline"
               onClick={() => onNeedReceive?.(Number(form.item_id))}
             >
               Create one via Receive
@@ -182,14 +182,14 @@ export default function AdjustStockForm({ items = [], onAdjusted, onNeedReceive 
             .
           </div>
         )}
-      </label>
+      </div>
 
       {/* Direction + Qty */}
-      <div className="grid grid-cols-2 gap-2">
-        <label className="block">
-          <span className="block text-sm mb-1">Direction</span>
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <label className="form-label">Direction *</label>
           <select
-            className="border rounded px-3 py-2 w-full"
+            className="form-select"
             value={form.direction}
             onChange={(e) => handle("direction", e.target.value)}
             required
@@ -197,12 +197,12 @@ export default function AdjustStockForm({ items = [], onAdjusted, onNeedReceive 
             <option value="decrease">Decrease</option>
             <option value="increase">Increase</option>
           </select>
-        </label>
+        </div>
 
-        <label className="block">
-          <span className="block text-sm mb-1">Quantity</span>
+        <div className="col-md-6">
+          <label className="form-label">Quantity *</label>
           <input
-            className="border rounded px-3 py-2 w-full"
+            className="form-control"
             type="number"
             step="0.001"
             min="0.001"
@@ -211,55 +211,62 @@ export default function AdjustStockForm({ items = [], onAdjusted, onNeedReceive 
             onChange={(e) => handle("quantity", e.target.value)}
             required
           />
-        </label>
+        </div>
       </div>
 
       {/* Reason */}
-      <div className="grid grid-cols-2 gap-2">
-        <label className="block">
-          <span className="block text-sm mb-1">Reason</span>
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <label className="form-label">Reason *</label>
           <select
-            className="border rounded px-3 py-2 w-full"
+            className="form-select"
             value={form.adjust_reason}
             onChange={(e) => handle("adjust_reason", e.target.value)}
             required
           >
             {REASONS.map((r) => (
               <option key={r} value={r}>
-                {r}
+                {r.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
               </option>
             ))}
           </select>
-        </label>
+        </div>
 
         {form.adjust_reason === "other" && (
-          <label className="block">
-            <span className="block text-sm mb-1">Describe reason</span>
+          <div className="col-md-6">
+            <label className="form-label">Describe reason *</label>
             <input
-              className="border rounded px-3 py-2 w-full"
+              className="form-control"
               placeholder="e.g., audit note"
               value={form.custom_reason}
               onChange={(e) => handle("custom_reason", e.target.value)}
               required
             />
-          </label>
+          </div>
         )}
       </div>
 
       {/* Notes */}
-      <label className="block">
-        <span className="block text-sm mb-1">Notes (optional)</span>
+      <div className="mb-3">
+        <label className="form-label">Notes (optional)</label>
         <textarea
-          className="border rounded px-3 py-2 w-full"
-          rows={2}
+          className="form-control"
+          rows={3}
+          placeholder="Additional notes..."
           value={form.notes}
           onChange={(e) => handle("notes", e.target.value)}
         />
-      </label>
+      </div>
 
-      <button className="border rounded px-3 py-2" disabled={!canSubmit}>
-        Adjust
-      </button>
+      <div className="d-flex justify-content-end">
+        <button 
+          type="submit"
+          className="btn btn-secondary" 
+          disabled={!canSubmit}
+        >
+          Adjust Stock
+        </button>
+      </div>
     </form>
   );
 }

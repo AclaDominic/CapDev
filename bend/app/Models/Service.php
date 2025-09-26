@@ -56,5 +56,9 @@ class Service extends Model
         return $this->belongsToMany(Service::class, 'service_bundle_items', 'parent_service_id', 'child_service_id');
     }
 
-
+    // Add this method to get services that are part of packages
+    public function parentPackages()
+    {
+        return $this->belongsToMany(Service::class, 'service_bundle_items', 'child_service_id', 'parent_service_id');
+    }
 }

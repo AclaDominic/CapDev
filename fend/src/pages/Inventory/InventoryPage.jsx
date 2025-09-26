@@ -6,7 +6,7 @@ import ConsumeStockForm from "./ConsumeStockForm";
 import AdjustStockForm from "./AdjustStockForm";
 import Modal from "../../components/Modal";
 
-/** Admin-only settings card (kept inline for brevity) */
+/** Admin-only settings card with improved design */
 function InventorySettingsCard() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,46 +40,65 @@ function InventorySettingsCard() {
 
   useEffect(() => { load(); }, []);
 
-  if (loading) return <div className="border rounded-xl p-4">Loading settings…</div>;
+  if (loading) return (
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div className="animate-pulse">
+        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
+        <div className="space-y-3">
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="border rounded-xl p-4 space-y-3">
-      <h2 className="font-medium">Inventory Settings</h2>
-
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={form.staff_can_receive}
-          onChange={e => setForm(s => ({ ...s, staff_can_receive: e.target.checked }))}
-        />
-        <span>Allow staff to receive stock</span>
-      </label>
-
-      <div className="grid grid-cols-2 gap-2">
-        <label className="flex items-center gap-2">
-          <span>Near-expiry days</span>
+    <div>
+      <div className="mb-3">
+        <div className="form-check">
           <input
-            className="border rounded px-2 py-1 w-24"
+            type="checkbox"
+            className="form-check-input"
+            checked={form.staff_can_receive}
+            onChange={e => setForm(s => ({ ...s, staff_can_receive: e.target.checked }))}
+          />
+          <label className="form-check-label">
+            Allow staff to receive stock
+          </label>
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-md-6 mb-3">
+          <label className="form-label">Near-expiry days</label>
+          <input
+            className="form-control"
             type="number" min="1" max="365"
             value={form.near_expiry_days}
             onChange={e => setForm(s => ({ ...s, near_expiry_days: Number(e.target.value) }))}
           />
-        </label>
+        </div>
 
-        <label className="flex items-center gap-2">
-          <span>Low-stock debounce (hours)</span>
+        <div className="col-md-6 mb-3">
+          <label className="form-label">Low-stock debounce (hours)</label>
           <input
-            className="border rounded px-2 py-1 w-24"
+            className="form-control"
             type="number" min="1" max="168"
             value={form.low_stock_debounce_hours}
             onChange={e => setForm(s => ({ ...s, low_stock_debounce_hours: Number(e.target.value) }))}
           />
-        </label>
+        </div>
       </div>
 
-      <button className="border rounded px-3 py-2" onClick={save} disabled={saving}>
-        {saving ? "Saving…" : "Save Settings"}
-      </button>
+      <div className="d-flex justify-content-end">
+        <button 
+          className="btn btn-primary" 
+          onClick={save} 
+          disabled={saving}
+        >
+          {saving ? "Saving…" : "Save Settings"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -95,6 +114,7 @@ export default function InventoryPage() {
   const [openReceive, setOpenReceive] = useState(false);
   const [openConsume, setOpenConsume] = useState(false);
   const [openAdjust, setOpenAdjust] = useState(false);
+  const [openSettings, setOpenSettings] = useState(false);
 
   // item prefill when jumping from Adjust -> Receive
   const [prefillItemId, setPrefillItemId] = useState(null);
@@ -129,87 +149,154 @@ export default function InventoryPage() {
   }, []);
 
   const totalSkus = useMemo(() => items.length, [items]);
+  
+  // Check if any modal is open
+  const isAnyModalOpen = openAdd || openReceive || openConsume || openAdjust || openSettings;
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Inventory</h1>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h1 className="h3 mb-1">Inventory</h1>
+          <p className="text-muted small">Manage your stock and supplies</p>
+        </div>
+        <div className="d-flex align-items-center gap-3">
+          <div className="card border-0 bg-light">
+            <div className="card-body py-2 px-3">
+              <div className="h5 mb-0 text-primary">{totalSkus}</div>
+              <div className="small text-muted">Total Items</div>
+            </div>
+          </div>
+          {user?.role === "admin" && (
+            <button 
+              className={`btn btn-outline-secondary btn-sm ${isAnyModalOpen ? 'disabled' : ''}`}
+              onClick={() => !isAnyModalOpen && setOpenSettings(true)}
+              disabled={isAnyModalOpen}
+              title="Inventory Settings"
+            >
+              <i className="bi bi-gear"></i>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search + actions */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <input
-          className="border rounded px-3 py-2 w-64"
-          placeholder="Search items..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <button className="border rounded px-3 py-2" onClick={() => fetchItems(q)}>Search</button>
+      <div className="d-flex flex-wrap gap-2 align-items-center mb-4">
+        <div className="input-group flex-grow-1" style={{minWidth: '300px'}}>
+          <span className="input-group-text">
+            <i className="bi bi-search"></i>
+          </span>
+          <input
+            className={`form-control ${isAnyModalOpen ? 'opacity-50' : ''}`}
+            placeholder="Search items..."
+            value={q}
+            onChange={(e) => !isAnyModalOpen && setQ(e.target.value)}
+            disabled={isAnyModalOpen}
+          />
+        </div>
+        
+        <button 
+          className={`btn btn-outline-secondary ${isAnyModalOpen ? 'disabled' : ''}`} 
+          onClick={() => !isAnyModalOpen && fetchItems(q)}
+          disabled={isAnyModalOpen}
+        >
+          Search
+        </button>
 
-        <div className="ml-auto flex gap-2">
-          <button className="border rounded px-3 py-2" onClick={() => setOpenAdd(true)}>
+        <div className="d-flex gap-2 ms-auto">
+          <button 
+            className={`btn btn-success btn-sm ${isAnyModalOpen ? 'disabled' : ''}`} 
+            onClick={() => !isAnyModalOpen && setOpenAdd(true)}
+            disabled={isAnyModalOpen}
+          >
             + Add Item
           </button>
-          <button className="border rounded px-3 py-2" onClick={() => setOpenReceive(true)}>
+          <button 
+            className={`btn btn-primary btn-sm ${isAnyModalOpen ? 'disabled' : ''}`} 
+            onClick={() => !isAnyModalOpen && setOpenReceive(true)}
+            disabled={isAnyModalOpen}
+          >
             ⇪ Receive Stock
           </button>
-          <button className="border rounded px-3 py-2" onClick={() => setOpenConsume(true)}>
+          <button 
+            className={`btn btn-warning btn-sm ${isAnyModalOpen ? 'disabled' : ''}`} 
+            onClick={() => !isAnyModalOpen && setOpenConsume(true)}
+            disabled={isAnyModalOpen}
+          >
             − Consume
           </button>
           {user?.role === "admin" && (
-            <button className="border rounded px-3 py-2" onClick={() => setOpenAdjust(true)}>
+            <button 
+              className={`btn btn-secondary btn-sm ${isAnyModalOpen ? 'disabled' : ''}`} 
+              onClick={() => !isAnyModalOpen && setOpenAdjust(true)}
+              disabled={isAnyModalOpen}
+            >
               ✎ Adjust
             </button>
           )}
         </div>
       </div>
 
-      {/* Admin-only settings */}
-      {user?.role === "admin" && (
-        <div>
-          <InventorySettingsCard />
-        </div>
-      )}
 
       {/* Items table */}
-      <div className="border rounded-xl p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-medium">Items ({totalSkus})</h2>
-          {loading && <span className="text-sm">Loading…</span>}
+      <div className="card">
+        <div className="card-header d-flex justify-content-between align-items-center">
+          <h5 className="card-title mb-0">Items ({totalSkus})</h5>
+          {loading && <span className="badge bg-secondary">Loading…</span>}
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="text-left border-b">
-                <th className="py-2 pr-4">Name</th>
-                <th className="py-2 pr-4">SKU</th>
-                <th className="py-2 pr-4">Type</th>
-                <th className="py-2 pr-4">Unit</th>
-                <th className="py-2 pr-4">Threshold</th>
-                <th className="py-2 pr-4">On Hand</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((it) => (
-                <tr key={it.id} className="border-b">
-                  <td className="py-2 pr-4">{it.name}</td>
-                  <td className="py-2 pr-4">{it.sku_code}</td>
-                  <td className="py-2 pr-4">{it.type}</td>
-                  <td className="py-2 pr-4">{it.unit}</td>
-                  <td className="py-2 pr-4">{it.low_stock_threshold ?? 0}</td>
-                  <td className="py-2 pr-4">{Number(it.total_on_hand || 0)}</td>
-                </tr>
-              ))}
-              {items.length === 0 && !loading && (
+        
+        <div className="card-body p-0">
+          <div className="table-responsive">
+            <table className="table table-hover mb-0">
+              <thead className="table-light">
                 <tr>
-                  <td colSpan="6" className="py-6 text-center text-gray-500">
-                    No items yet.
-                  </td>
+                  <th>Name</th>
+                  <th>SKU</th>
+                  <th>Type</th>
+                  <th>Unit</th>
+                  <th>Threshold</th>
+                  <th>On Hand</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {items.map((it) => {
+                  const onHand = Number(it.total_on_hand || 0);
+                  const threshold = it.low_stock_threshold ?? 0;
+                  const isLowStock = onHand <= threshold;
+                  
+                  return (
+                    <tr key={it.id}>
+                      <td className="fw-medium">{it.name}</td>
+                      <td className="font-monospace text-muted">{it.sku_code}</td>
+                      <td>
+                        <span className="badge bg-primary">{it.type}</span>
+                      </td>
+                      <td className="text-muted">{it.unit}</td>
+                      <td className="text-muted">{threshold}</td>
+                      <td>
+                        <div className="d-flex align-items-center gap-2">
+                          <span className={`fw-medium ${isLowStock ? 'text-danger' : 'text-success'}`}>
+                            {onHand}
+                          </span>
+                          {isLowStock && (
+                            <span className="badge bg-danger">Low</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {items.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan="6" className="text-center text-muted py-4">
+                      No items yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -259,6 +346,10 @@ export default function InventoryPage() {
           }}
           onNeedReceive={openReceiveForItem}
         />
+      </Modal>
+
+      <Modal open={openSettings} onClose={() => setOpenSettings(false)} title="Inventory Settings">
+        <InventorySettingsCard />
       </Modal>
     </div>
   );

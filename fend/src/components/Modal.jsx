@@ -49,43 +49,50 @@ export default function Modal({ open, onClose, title, children, maxWidth = "md" 
   if (!open) return null;
 
   const sizes = {
-    sm: "max-w-sm",
-    md: "max-w-lg",
-    lg: "max-w-2xl",
-    xl: "max-w-4xl",
+    sm: "modal-sm",
+    md: "",
+    lg: "modal-lg",
+    xl: "modal-xl",
   };
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[2000]"     // high z-index: above sidebar/dropdowns
+      className="modal fade show d-block"
       role="dialog"
       aria-modal="true"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 2000,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)'
+      }}
       onMouseDown={(e) => {
         // close only when clicking the dark backdrop (not inside the panel)
         if (e.target === e.currentTarget) onClose?.();
       }}
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" />
-
-      {/* Panel wrapper */}
-      <div className="relative min-h-screen w-full flex items-center justify-center p-4">
+      <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div
           ref={panelRef}
           tabIndex={-1}
-          className={`w-[92vw] ${sizes[maxWidth]} rounded-2xl bg-white dark:bg-gray-900 shadow-xl border dark:border-white/10 outline-none`}
+          className={`modal-content ${sizes[maxWidth]}`}
+          style={{ maxHeight: '90vh' }}
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b dark:border-white/10">
-            <h3 className="text-lg font-semibold">{title}</h3>
+          <div className="modal-header">
+            <h5 className="modal-title">{title}</h5>
             <button
+              type="button"
+              className="btn-close"
               onClick={onClose}
               aria-label="Close"
-              className="rounded p-2 hover:bg-black/5 dark:hover:bg-white/10"
-            >
-              ✕
-            </button>
+            ></button>
           </div>
-          <div className="p-4">{children}</div>
+          <div className="modal-body">
+            {children}
+          </div>
         </div>
       </div>
     </div>,

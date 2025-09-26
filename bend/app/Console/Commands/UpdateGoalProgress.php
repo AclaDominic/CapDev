@@ -76,8 +76,8 @@ class UpdateGoalProgress extends Command
                     ->whereBetween('start_time', [$periodStart, $effectiveEnd])
                     ->count();
                     
-            case 'package_availment':
-                // Count visits for the package service itself
+            case 'package_promo_availment':
+                // Count visits for the package/promo service itself
                 $packageVisits = DB::table('patient_visits')
                     ->whereNotNull('start_time')
                     ->where('service_id', $goal->package_id)
@@ -93,18 +93,6 @@ class UpdateGoalProgress extends Command
                     ->count();
                     
                 return $packageVisits + $bundleVisits;
-                
-            case 'promo_availment':
-                // Get the promo details
-                $promo = DB::table('service_discounts')->where('id', $goal->promo_id)->first();
-                if (!$promo) return 0;
-                
-                // Count visits for the service during the promo period
-                return DB::table('patient_visits')
-                    ->whereNotNull('start_time')
-                    ->where('service_id', $promo->service_id)
-                    ->whereBetween('start_time', [$periodStart, $effectiveEnd])
-                    ->count();
                     
             default:
                 return 0;

@@ -24,7 +24,7 @@ class PerformanceGoalTestSeeder extends Seeder
         // Create test packages (service bundles)
         $this->createTestPackages();
         
-        // Create test promos
+        // Create test promos (service discounts)
         $this->createTestPromos();
         
         // Create test patients

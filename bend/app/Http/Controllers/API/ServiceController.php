@@ -13,7 +13,7 @@ class ServiceController extends Controller
      */
     public function index()
     {
-        return response()->json(Service::with('bundledServices')->get());
+        return response()->json(Service::with(['bundledServices', 'bundleItems'])->get());
     }
 
     /**
@@ -45,7 +45,7 @@ class ServiceController extends Controller
             $service->bundledServices()->sync($request->input('bundled_service_ids'));
         }
 
-        return response()->json($service->load('bundledServices'), 201);
+        return response()->json($service->load(['bundledServices', 'bundleItems']), 201);
     }
 
     /**
@@ -53,7 +53,7 @@ class ServiceController extends Controller
      */
     public function show(string $id)
     {
-        return response()->json(Service::with('bundledServices')->findOrFail($id));
+        return response()->json(Service::with(['bundledServices', 'bundleItems'])->findOrFail($id));
     }
 
     /**
@@ -88,7 +88,7 @@ class ServiceController extends Controller
             $service->bundledServices()->sync($request->input('bundled_service_ids'));
         }
 
-        return response()->json($service->load('bundledServices'));
+        return response()->json($service->load(['bundledServices', 'bundleItems']));
     }
 
     /**
