@@ -154,7 +154,7 @@ class AppointmentController extends Controller
             : null;
 
         if ($start) {
-            $capCheck = $this->checkCapacity($appointment->service, $appointment->date, $start);
+            $capCheck = $this->checkCapacity($appointment->service, $appointment->date, $start, $appointment->id);
             if (!$capCheck['ok']) {
                 SystemLog::create([
                     'user_id' => auth()->id(),
@@ -486,7 +486,7 @@ class AppointmentController extends Controller
      * Check per-block capacity for a given service, date (Y-m-d) and start time (H:i or H:i:s).
      * Returns [ 'ok' => bool, 'full_at' => 'HH:MM' ]
      */
-    private function checkCapacity(Service $service, string $dateStr, string $startRaw): array
+    private function checkCapacity(Service $service, string $dateStr, string $startRaw, ?int $excludeAppointmentId = null): array
     {
         $resolver = app(ClinicDateResolverService::class);
         $date = Carbon::createFromFormat('Y-m-d', $dateStr)->startOfDay();
@@ -500,9 +500,15 @@ class AppointmentController extends Controller
 
         // build usage map for the date (pending + approved + completed)
         $slotUsage = array_fill_keys($grid, 0);
-        $appointments = Appointment::whereDate('date', $dateStr)
-            ->whereIn('status', ['pending', 'approved', 'completed'])
-            ->get(['time_slot']);
+        $appointmentsQuery = Appointment::whereDate('date', $dateStr)
+            ->whereIn('status', ['pending', 'approved', 'completed']);
+        
+        // Exclude the appointment being approved to avoid double-counting
+        if ($excludeAppointmentId) {
+            $appointmentsQuery->where('id', '!=', $excludeAppointmentId);
+        }
+        
+        $appointments = $appointmentsQuery->get(['time_slot']);
 
         foreach ($appointments as $appt) {
             if (!$appt->time_slot || strpos($appt->time_slot, '-') === false) continue;
