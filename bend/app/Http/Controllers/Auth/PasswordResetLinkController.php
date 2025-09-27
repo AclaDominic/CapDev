@@ -60,4 +60,41 @@ class PasswordResetLinkController extends Controller
             ? response()->json(['message' => __($status)])
             : response()->json(['message' => __($status)], 500);
     }
+
+    /**
+     * Send password reset link for authenticated users
+     */
+    public function sendForAuthenticatedUser(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        
+        // Check if user has made too many reset requests recently
+        $recentCount = PasswordResetRequest::where('email', $user->email)
+            ->where('created_at', '>=', now()->subHours(24))
+            ->count();
+
+        if ($recentCount >= 4) {
+            return response()->json([
+                'message' => 'Too many password reset requests. Please try again after 24 hours.'
+            ], 429);
+        }
+
+        // Record the reset request
+        PasswordResetRequest::create([
+            'device_id' => 'authenticated_user', // Special identifier for authenticated users
+            'email' => $user->email,
+        ]);
+
+        // Clear existing tokens
+        DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+
+        // Send the password reset link
+        $status = Password::sendResetLink(
+            $request->user()->only('email')
+        );
+
+        return $status === Password::RESET_LINK_SENT
+            ? response()->json(['message' => 'Password reset link sent to your email.'])
+            : response()->json(['message' => 'Failed to send reset link.'], 500);
+    }
 }

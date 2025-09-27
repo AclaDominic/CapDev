@@ -7,6 +7,7 @@ use App\Models\Patient;
 use App\Models\Service;
 use App\Models\SystemLog;
 use App\Models\Appointment;
+use App\Models\Payment;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -203,7 +204,25 @@ class AppointmentController extends Controller
         $from = $appointment->status;
         $appointment->status = 'rejected';
         $appointment->notes = $request->note;
+        
+        // Update payment status to unpaid for rejected appointments
+        $appointment->payment_status = 'unpaid';
         $appointment->save();
+
+        // Cancel any existing Maya payments for this appointment
+        if ($appointment->payment_method === 'maya') {
+            $mayaPayments = Payment::where('appointment_id', $appointment->id)
+                ->where('method', 'maya')
+                ->whereIn('status', ['unpaid', 'awaiting_payment'])
+                ->get();
+            
+            foreach ($mayaPayments as $payment) {
+                $payment->update([
+                    'status' => 'cancelled',
+                    'cancelled_at' => now(),
+                ]);
+            }
+        }
 
         // Notify patient about appointment rejection
         SystemNotificationService::notifyAppointmentStatusChange($appointment, 'rejected');
@@ -479,10 +498,10 @@ class AppointmentController extends Controller
         $startTime = Carbon::createFromFormat('H:i', $this->normalizeTime($startRaw));
         $blocksNeeded = (int) max(1, ceil(($service->estimated_minutes ?? 30) / 30));
 
-        // build usage map for the date (pending + approved)
+        // build usage map for the date (pending + approved + completed)
         $slotUsage = array_fill_keys($grid, 0);
         $appointments = Appointment::whereDate('date', $dateStr)
-            ->whereIn('status', ['pending', 'approved'])
+            ->whereIn('status', ['pending', 'approved', 'completed'])
             ->get(['time_slot']);
 
         foreach ($appointments as $appt) {

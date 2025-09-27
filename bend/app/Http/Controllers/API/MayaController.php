@@ -24,6 +24,16 @@ class MayaController extends Controller
             'patient_visit_id' => 'nullable|exists:patient_visits,id',
         ]);
 
+        // Check if appointment is rejected and prevent Maya payment
+        if ($request->appointment_id) {
+            $appointment = \App\Models\Appointment::find($request->appointment_id);
+            if ($appointment && $appointment->status === 'rejected') {
+                return response()->json([
+                    'message' => 'Cannot create Maya payment for rejected appointments.',
+                ], 422);
+            }
+        }
+
         $amountDue = $this->computeAmount($request);
 
         $payment = Payment::create([

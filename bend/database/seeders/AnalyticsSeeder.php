@@ -10,6 +10,7 @@ use App\Models\PerformanceGoal;
 use App\Models\GoalProgressSnapshot;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\ClinicDateResolverService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -196,17 +197,40 @@ class AnalyticsSeeder extends Seeder
                 continue;
             }
             
-            // Generate visits for the day (6-25 visits per day)
-            $visitsToday = $this->getDailyVisitCount($currentDay);
+            // Get clinic capacity for this day
+            $resolver = app(ClinicDateResolverService::class);
+            $snap = $resolver->resolve($currentDay);
+            
+            if (!$snap['is_open']) {
+                continue; // Skip if clinic is closed
+            }
+            
+            $capacity = (int) $snap['effective_capacity'];
+            $grid = ClinicDateResolverService::buildBlocks($snap['open_time'], $snap['close_time']);
+            
+            // Track capacity usage per time slot
+            $slotUsage = array_fill_keys($grid, 0);
+            
+            // Generate visits for the day, respecting capacity limits
+            $maxVisitsToday = min(25, $capacity * count($grid) * 0.8); // Max 80% of total capacity
+            $visitsToday = min($this->getDailyVisitCount($currentDay), $maxVisitsToday);
             
             for ($i = 0; $i < $visitsToday; $i++) {
                 $patientId = $patients[array_rand($patients)];
                 $serviceId = $services[array_rand($services)];
                 
-                // Generate realistic time slots
-                $timeSlot = $this->generateTimeSlot($currentDay);
+                // Generate realistic time slots that respect capacity
+                $timeSlot = $this->generateTimeSlotWithCapacity($currentDay, $slotUsage, $capacity, $grid);
+                if (!$timeSlot) {
+                    // No available slots, skip this visit
+                    continue;
+                }
+                
                 $startTime = $timeSlot['start'];
                 $endTime = $timeSlot['end'];
+                
+                // Update slot usage
+                $this->updateSlotUsage($slotUsage, $timeSlot['slot'], $grid);
                 
                 // Determine visit status
                 $status = $this->getVisitStatus($currentDay);
@@ -327,6 +351,74 @@ class AnalyticsSeeder extends Seeder
             'end' => $end,
             'slot' => sprintf('%02d:%02d-%02d:%02d', $hour, $minute, $end->hour, $end->minute),
         ];
+    }
+
+    private function generateTimeSlotWithCapacity(Carbon $day, array $slotUsage, int $capacity, array $grid): ?array
+    {
+        // Try to find an available slot
+        $attempts = 0;
+        $maxAttempts = count($grid) * 2; // Try twice as many times as available slots
+        
+        while ($attempts < $maxAttempts) {
+            $slot = $grid[array_rand($grid)];
+            [$hour, $minute] = array_map('intval', explode(':', $slot));
+            
+            $start = $day->copy()->setTime($hour, $minute, 0);
+            $duration = rand(20, 120); // 20 minutes to 2 hours
+            $end = $start->copy()->addMinutes($duration);
+            
+            // Check if this slot and duration fits within capacity
+            if ($this->canFitInSlot($slotUsage, $slot, $duration, $capacity, $grid)) {
+                return [
+                    'start' => $start,
+                    'end' => $end,
+                    'slot' => sprintf('%02d:%02d-%02d:%02d', $hour, $minute, $end->hour, $end->minute),
+                ];
+            }
+            
+            $attempts++;
+        }
+        
+        return null; // No available slot found
+    }
+
+    private function canFitInSlot(array $slotUsage, string $startSlot, int $duration, int $capacity, array $grid): bool
+    {
+        $startTime = Carbon::createFromFormat('H:i', $startSlot);
+        $endTime = $startTime->copy()->addMinutes($duration);
+        
+        // Check each 30-minute block that this appointment would occupy
+        $current = $startTime->copy();
+        while ($current->lt($endTime)) {
+            $slotKey = $current->format('H:i');
+            
+            // If slot doesn't exist in grid or is already at capacity, can't fit
+            if (!array_key_exists($slotKey, $slotUsage) || $slotUsage[$slotKey] >= $capacity) {
+                return false;
+            }
+            
+            $current->addMinutes(30);
+        }
+        
+        return true;
+    }
+
+    private function updateSlotUsage(array &$slotUsage, string $timeSlot, array $grid): void
+    {
+        if (strpos($timeSlot, '-') === false) return;
+        
+        [$start, $end] = explode('-', $timeSlot, 2);
+        $startTime = Carbon::createFromFormat('H:i', trim($start));
+        $endTime = Carbon::createFromFormat('H:i', trim($end));
+        
+        $current = $startTime->copy();
+        while ($current->lt($endTime)) {
+            $slotKey = $current->format('H:i');
+            if (array_key_exists($slotKey, $slotUsage)) {
+                $slotUsage[$slotKey]++;
+            }
+            $current->addMinutes(30);
+        }
     }
 
     private function getVisitStatus(Carbon $day): string

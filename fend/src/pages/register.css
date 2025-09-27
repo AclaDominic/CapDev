@@ -19,6 +19,12 @@
   /* Your brand gradient */
   background: linear-gradient(to right, var(--brand), var(--brand-dark));
   color: #fff;
+  
+  /* Full width utilization */
+  width: 100%;
+  max-width: none;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 /* Left side (brand panel) */
@@ -153,6 +159,12 @@
 }
 
 /* Responsive */
+@media (min-width: 1600px){
+  .auth-container{
+    max-width: 1400px;               /* Reasonable max width for very wide screens */
+  }
+}
+
 @media (max-width: 992px){
   .auth-container{ grid-template-columns: 1fr; }
   .auth-left, .auth-right .card{ border-radius: 16px; }

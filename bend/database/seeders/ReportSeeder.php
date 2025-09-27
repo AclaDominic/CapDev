@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\PatientVisit;
 use App\Models\Service;
+use App\Services\ClinicDateResolverService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
@@ -42,26 +43,59 @@ class ReportSeeder extends Seeder
         $visitRows = [];
         $appointmentRows = [];
 
-        // Create 6-16 visits per day, random services, and some null service_id
+        // Create visits per day, respecting capacity limits
         for ($d = 0; $d < $numDays; $d++) {
             $day = (clone $startOfMonth)->addDays($d);
-            $visitsToday = random_int(6, 16);
+            
+            // Skip Sundays (clinic closed)
+            if ($day->isSunday()) {
+                continue;
+            }
+            
+            // Get clinic capacity for this day
+            $resolver = app(ClinicDateResolverService::class);
+            $snap = $resolver->resolve($day);
+            
+            if (!$snap['is_open']) {
+                continue; // Skip if clinic is closed
+            }
+            
+            $capacity = (int) $snap['effective_capacity'];
+            $grid = ClinicDateResolverService::buildBlocks($snap['open_time'], $snap['close_time']);
+            
+            // Track capacity usage per time slot
+            $slotUsage = array_fill_keys($grid, 0);
+            
+            // Calculate max visits based on capacity
+            $maxVisitsToday = min(16, $capacity * count($grid) * 0.6); // Max 60% of total capacity
+            $visitsToday = random_int(6, $maxVisitsToday);
 
             for ($i = 0; $i < $visitsToday; $i++) {
                 $patientId = $patients[array_rand($patients)];
                 $hasService = random_int(0, 9) !== 0; // ~10% unspecified service
                 $serviceId = $hasService ? $services[array_rand($services)] : null;
 
-                // Random hour within clinic hours 08:00-18:00
-                $hour = random_int(8, 17);
-                $minute = [0, 15, 30, 45][array_rand([0,1,2,3])];
-                $startAt = (clone $day)->setTime($hour, $minute, 0);
+                // Find available time slot that respects capacity
+                $availableSlot = $this->findAvailableSlot($slotUsage, $capacity, $grid);
+                if (!$availableSlot) {
+                    // No available slots, skip this visit
+                    continue;
+                }
+                
+                $startAt = (clone $day)->setTime($availableSlot['hour'], $availableSlot['minute'], 0);
                 $status = $statuses[array_rand($statuses)];
 
                 $endAt = null;
                 if ($status !== 'pending') {
                     $endAt = (clone $startAt)->addMinutes(random_int(20, 120));
                 }
+                
+                $timeSlot = sprintf('%02d:%02d-%02d:%02d', 
+                    $availableSlot['hour'], 
+                    $availableSlot['minute'], 
+                    $endAt ? $endAt->hour : $availableSlot['hour'] + 1, 
+                    $endAt ? $endAt->minute : $availableSlot['minute']
+                );
 
                 $visitRows[] = [
                     'patient_id' => $patientId,
@@ -83,7 +117,7 @@ class ReportSeeder extends Seeder
                         'service_id' => $serviceId,
                         'patient_hmo_id' => null,
                         'date' => $day->toDateString(),
-                        'time_slot' => sprintf('%02d:%02d-%02d:%02d', $hour, $minute, min($hour + 1, 23), $minute),
+                        'time_slot' => $timeSlot,
                         'reference_code' => null,
                         'status' => $appointmentStatus,
                         'payment_method' => 'cash',
@@ -95,6 +129,9 @@ class ReportSeeder extends Seeder
                         'updated_at' => $startAt->toDateTimeString(),
                     ];
                 }
+                
+                // Update slot usage
+                $this->updateSlotUsage($slotUsage, $timeSlot, $grid);
             }
         }
 
@@ -107,5 +144,44 @@ class ReportSeeder extends Seeder
         }
 
         $this->command?->info('ReportSeeder: seeded '.count($visitRows).' visits and '.count($appointmentRows).' appointments for '.$startOfMonth->format('Y-m'));
+    }
+
+    private function findAvailableSlot(array $slotUsage, int $capacity, array $grid): ?array
+    {
+        // Try to find an available slot
+        $attempts = 0;
+        $maxAttempts = count($grid) * 2;
+        
+        while ($attempts < $maxAttempts) {
+            $slot = $grid[array_rand($grid)];
+            [$hour, $minute] = array_map('intval', explode(':', $slot));
+            
+            // Check if this slot has capacity
+            if ($slotUsage[$slot] < $capacity) {
+                return ['hour' => $hour, 'minute' => $minute];
+            }
+            
+            $attempts++;
+        }
+        
+        return null; // No available slot found
+    }
+
+    private function updateSlotUsage(array &$slotUsage, string $timeSlot, array $grid): void
+    {
+        if (strpos($timeSlot, '-') === false) return;
+        
+        [$start, $end] = explode('-', $timeSlot, 2);
+        $startTime = \Carbon\Carbon::createFromFormat('H:i', trim($start));
+        $endTime = \Carbon\Carbon::createFromFormat('H:i', trim($end));
+        
+        $current = $startTime->copy();
+        while ($current->lt($endTime)) {
+            $slotKey = $current->format('H:i');
+            if (array_key_exists($slotKey, $slotUsage)) {
+                $slotUsage[$slotKey]++;
+            }
+            $current->addMinutes(30);
+        }
     }
 }

@@ -5,6 +5,9 @@ import { useAuth } from "../../hooks/useAuth";
 
 const StaffProfile = () => {
   const [user, setUser] = useState(null);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { logout } = useAuth();
 
@@ -21,14 +24,21 @@ const StaffProfile = () => {
   }, []);
 
   const handleResetRequest = async () => {
-    await logout();
-    navigate("/forgot-password", {
-      state: {
-        email: user.email,
-        fromProfile: true,
-      },
-    });
+    setMessage("");
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await api.post("/api/send-password-reset");
+      setMessage(res.data.message || "Password reset link sent to your email!");
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to send reset link";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   if (!user) return <p>Loading...</p>;
 
@@ -42,11 +52,24 @@ const StaffProfile = () => {
         <p><strong>Role:</strong> {user.role}</p>
       </div>
 
+      {message && (
+        <div className="alert alert-success mb-3">
+          {message}
+        </div>
+      )}
+
+      {error && (
+        <div className="alert alert-danger mb-3">
+          {error}
+        </div>
+      )}
+
       <button
-        className="btn btn-outline-primary"
+        className="btn btn-primary"
         onClick={handleResetRequest}
+        disabled={loading}
       >
-        Send Password Reset Link to My Email
+        {loading ? "Sending..." : "Send Password Reset Link"}
       </button>
     </div>
   );

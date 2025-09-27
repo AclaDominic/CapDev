@@ -7,6 +7,11 @@ const PatientProfile = () => {
   const [user, setUser] = useState(null);
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactNumber, setContactNumber] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [sex, setSex] = useState("");
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,17 +32,21 @@ const PatientProfile = () => {
   }, []);
 
   const handleResetRequest = async () => {
-    try {
-      await api.post("/logout");
-      localStorage.removeItem("token");
-    } catch (err) {
-      console.warn("Logout failed, proceeding anyway.");
-    }
+    setMessage("");
+    setErrors({});
+    setLoading(true);
 
-    navigate("/forgot-password", {
-      state: { email: user.email, fromProfile: true },
-    });
+    try {
+      const res = await api.post("/api/send-password-reset");
+      setMessage(res.data.message || "Password reset link sent to your email!");
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to send reset link";
+      setMessage("❌ " + msg);
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   const handleLinkSelf = async () => {
     setLoading(true);
@@ -45,6 +54,11 @@ const PatientProfile = () => {
     try {
       await api.post("/api/patients/link-self", {
         contact_number: contactNumber,
+        first_name: firstName,
+        middle_name: middleName,
+        last_name: lastName,
+        birthdate: birthdate,
+        sex: sex,
       });
 
       setMessage("✅ Profile linked successfully.");
@@ -122,12 +136,20 @@ const PatientProfile = () => {
                     <p className="text-muted mb-3">
                       Need to change your password? We'll send a secure reset link to your email address.
                     </p>
+                    
+                    {message && (
+                      <div className="alert alert-success mb-3">
+                        {message}
+                      </div>
+                    )}
+
                     <button
-                      className="btn btn-outline-primary btn-lg"
+                      className="btn btn-primary btn-lg"
                       onClick={handleResetRequest}
+                      disabled={loading}
                     >
                       <i className="bi bi-envelope me-2"></i>
-                      Send Password Reset Link
+                      {loading ? "Sending..." : "Send Password Reset Link"}
                     </button>
                   </div>
                 </div>
@@ -171,42 +193,139 @@ const PatientProfile = () => {
                       {showContactForm && (
                         <div className="border-top pt-4">
                           <h6 className="mb-3">
-                            <i className="bi bi-telephone me-2"></i>
-                            Provide Your Contact Information
+                            <i className="bi bi-person-check me-2"></i>
+                            Verify Your Information
                           </h6>
-                          <div className="mb-3">
-                            <label className="form-label fw-semibold">Contact Number</label>
-                            <input
-                              className="form-control form-control-lg border-2"
-                              placeholder="e.g. 09123456789"
-                              value={contactNumber}
-                              onChange={(e) => setContactNumber(e.target.value)}
-                              style={{ fontSize: '1.1rem' }}
-                            />
-                            {errors.contact_number && (
-                              <div className="text-danger mt-2">
-                                <i className="bi bi-exclamation-triangle me-1"></i>
-                                {errors.contact_number[0]}
-                              </div>
-                            )}
+                          <p className="text-muted mb-4">
+                            Please confirm your details to create your patient profile. This information will be used for senior discounts and VAT exemptions.
+                          </p>
+                          
+                          <div className="row g-3">
+                            <div className="col-12 col-md-4">
+                              <label className="form-label fw-semibold">First Name *</label>
+                              <input
+                                className={`form-control form-control-lg border-2 ${errors.first_name ? 'is-invalid' : ''}`}
+                                placeholder="e.g. Juan"
+                                value={firstName}
+                                onChange={(e) => setFirstName(e.target.value)}
+                                style={{ fontSize: '1.1rem' }}
+                              />
+                              {errors.first_name && (
+                                <div className="text-danger mt-2">
+                                  <i className="bi bi-exclamation-triangle me-1"></i>
+                                  {errors.first_name[0]}
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="col-12 col-md-4">
+                              <label className="form-label fw-semibold">Middle Name</label>
+                              <input
+                                className={`form-control form-control-lg border-2 ${errors.middle_name ? 'is-invalid' : ''}`}
+                                placeholder="e.g. Santos (optional)"
+                                value={middleName}
+                                onChange={(e) => setMiddleName(e.target.value)}
+                                style={{ fontSize: '1.1rem' }}
+                              />
+                              {errors.middle_name && (
+                                <div className="text-danger mt-2">
+                                  <i className="bi bi-exclamation-triangle me-1"></i>
+                                  {errors.middle_name[0]}
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="col-12 col-md-4">
+                              <label className="form-label fw-semibold">Last Name *</label>
+                              <input
+                                className={`form-control form-control-lg border-2 ${errors.last_name ? 'is-invalid' : ''}`}
+                                placeholder="e.g. Dela Cruz"
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
+                                style={{ fontSize: '1.1rem' }}
+                              />
+                              {errors.last_name && (
+                                <div className="text-danger mt-2">
+                                  <i className="bi bi-exclamation-triangle me-1"></i>
+                                  {errors.last_name[0]}
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="col-12">
+                              <label className="form-label fw-semibold">Contact Number *</label>
+                              <input
+                                className={`form-control form-control-lg border-2 ${errors.contact_number ? 'is-invalid' : ''}`}
+                                placeholder="e.g. 09123456789"
+                                value={contactNumber}
+                                onChange={(e) => setContactNumber(e.target.value)}
+                                style={{ fontSize: '1.1rem' }}
+                              />
+                              {errors.contact_number && (
+                                <div className="text-danger mt-2">
+                                  <i className="bi bi-exclamation-triangle me-1"></i>
+                                  {errors.contact_number[0]}
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="col-12 col-md-6">
+                              <label className="form-label fw-semibold">Birthdate *</label>
+                              <input
+                                type="date"
+                                className={`form-control form-control-lg border-2 ${errors.birthdate ? 'is-invalid' : ''}`}
+                                value={birthdate}
+                                onChange={(e) => setBirthdate(e.target.value)}
+                                style={{ fontSize: '1.1rem' }}
+                              />
+                              {errors.birthdate && (
+                                <div className="text-danger mt-2">
+                                  <i className="bi bi-exclamation-triangle me-1"></i>
+                                  {errors.birthdate[0]}
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="col-12 col-md-6">
+                              <label className="form-label fw-semibold">Sex *</label>
+                              <select
+                                className={`form-control form-control-lg border-2 ${errors.sex ? 'is-invalid' : ''}`}
+                                value={sex}
+                                onChange={(e) => setSex(e.target.value)}
+                                style={{ fontSize: '1.1rem' }}
+                              >
+                                <option value="">Select your sex</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                              </select>
+                              {errors.sex && (
+                                <div className="text-danger mt-2">
+                                  <i className="bi bi-exclamation-triangle me-1"></i>
+                                  {errors.sex[0]}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <button
-                            className="btn btn-success btn-lg w-100"
-                            onClick={handleLinkSelf}
-                            disabled={loading}
-                          >
-                            {loading ? (
-                              <>
-                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                Linking Profile...
-                              </>
-                            ) : (
-                              <>
-                                <i className="bi bi-link me-2"></i>
-                                Link My Profile
-                              </>
-                            )}
-                          </button>
+                          
+                          <div className="mt-4">
+                            <button
+                              className="btn btn-success btn-lg w-100"
+                              onClick={handleLinkSelf}
+                              disabled={loading || !firstName || !lastName || !contactNumber || !birthdate || !sex}
+                            >
+                              {loading ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                  Linking Profile...
+                                </>
+                              ) : (
+                                <>
+                                  <i className="bi bi-link me-2"></i>
+                                  Link My Profile
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       )}
 

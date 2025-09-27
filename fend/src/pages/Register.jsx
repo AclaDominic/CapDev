@@ -177,10 +177,20 @@ function Register() {
             {message && <div className="alert alert-info text-center mt-3">{message}</div>}
 
             <div className="text-center mt-3">
-              <Link to="/login" className="d-block text-decoration-none text-primary">
+              <Link to="/login" className="d-block text-decoration-none text-primary mb-2">
                 <i className="bi bi-box-arrow-in-right me-2" />
                 Already have an account? Login
               </Link>
+              
+              {/* Back to Login Button */}
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => navigate("/login")}
+              >
+                <i className="bi bi-arrow-left me-2" />
+                Back to Login
+              </button>
             </div>
           </div>
         </div>

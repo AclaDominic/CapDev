@@ -192,7 +192,8 @@ function PatientAppointments() {
                           {appointments.map((a) => {
                             const showPayNow =
                               a.payment_method === "maya" &&
-                              a.payment_status === "awaiting_payment";
+                              a.payment_status === "awaiting_payment" &&
+                              a.status === "approved";
 
                             return (
                               <tr key={a.id}>
@@ -242,7 +243,7 @@ function PatientAppointments() {
                                       </button>
                                     )}
 
-                                    {a.status !== "cancelled" && a.status !== "rejected" && (
+                                    {a.status !== "cancelled" && a.status !== "rejected" && a.status !== "completed" && (
                                       <button
                                         className="btn btn-outline-danger btn-sm"
                                         onClick={() => handleCancel(a.id)}
@@ -267,7 +268,8 @@ function PatientAppointments() {
                 {appointments.map((a) => {
                   const showPayNow =
                     a.payment_method === "maya" &&
-                    a.payment_status === "awaiting_payment";
+                    a.payment_status === "awaiting_payment" &&
+                    a.status === "approved";
 
                   return (
                     <div key={a.id} className="card mb-3 border-0 shadow-sm">
@@ -335,7 +337,7 @@ function PatientAppointments() {
                             </button>
                           )}
 
-                          {a.status !== "cancelled" && a.status !== "rejected" && (
+                          {a.status !== "cancelled" && a.status !== "rejected" && a.status !== "completed" && (
                             <button
                               className="btn btn-outline-danger btn-sm flex-fill"
                               onClick={() => handleCancel(a.id)}

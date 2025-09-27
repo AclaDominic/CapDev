@@ -34,9 +34,9 @@ class AppointmentSlotController extends Controller
         $blocks = ClinicDateResolverService::buildBlocks($snap['open_time'], $snap['close_time']);
         $usage  = array_fill_keys($blocks, 0);
 
-        // Count PENDING + APPROVED on that date (parse "HH:MM[-SS]-HH:MM[-SS]")
+        // Count PENDING + APPROVED + COMPLETED on that date (parse "HH:MM[-SS]-HH:MM[-SS]")
         $appts = Appointment::whereDate('date', $date->toDateString())
-            ->whereIn('status', ['pending', 'approved'])
+            ->whereIn('status', ['pending', 'approved', 'completed'])
             ->get(['time_slot']);
 
         foreach ($appts as $a) {

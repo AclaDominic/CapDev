@@ -14,7 +14,7 @@
   justify-content: center;             /* centers .login-container vertically & horizontally */
   padding: clamp(12px, 2vw, 32px);     /* breathing room on small screens */
   box-sizing: border-box;
-  
+  width: 100%;                        /* Ensure full width utilization */
 }
 
 /* Main container */
@@ -31,10 +31,10 @@
 
   /* centering & sizing */
   width: 100%;
-  max-width: 1200px;                   /* keeps content readable on very wide screens */
-  margin: 0 auto;                      /* horizontal center safety */
+  max-width: none;                        /* Remove width constraint for full screen utilization */
+  margin: 0 auto;                        /* horizontal center safety */
   box-sizing: border-box;
-  overflow: hidden;                    /* clip inner overflow on small screens */
+  overflow: hidden;                      /* clip inner overflow on small screens */
 }
 
 /* Left */
@@ -152,10 +152,17 @@
 
 /* ================== Responsive Tweaks ================== */
 
+/* Very wide screens - ensure content doesn't get too stretched */
+@media (min-width: 1600px){
+  .login-container{
+    max-width: 1400px;               /* Reasonable max width for very wide screens */
+  }
+}
+
 /* Large tablets / small laptops */
 @media (max-width: 1200px){
   .login-container{
-    max-width: 1040px;
+    /* Remove max-width constraint to allow full width utilization */
   }
 }
 

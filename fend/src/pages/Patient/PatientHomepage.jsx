@@ -8,6 +8,7 @@ function PatientHomepage() {
   const [recentAppointments, setRecentAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [appointmentsLoading, setAppointmentsLoading] = useState(true);
+  const [paying, setPaying] = useState(null); // appointment_id being processed
 
   useEffect(() => {
     fetchUserData();
@@ -61,6 +62,39 @@ function PatientHomepage() {
       failed: "danger",
     };
     return statusMap[status] || "secondary";
+  };
+
+  const handlePayNow = async (appointmentId) => {
+    try {
+      setPaying(appointmentId);
+
+      // ✅ 1) make sure we have fresh CSRF + session
+      await api.get("/sanctum/csrf-cookie");
+
+      // ✅ 2) let backend compute amount + create Maya checkout
+      const { data } = await api.post(
+        "/api/maya/payments",
+        { appointment_id: appointmentId },
+        { skip401Handler: true }
+      );
+
+      if (data?.redirect_url) {
+        // ✅ 3) go to Maya sandbox hosted page
+        window.location.href = data.redirect_url;
+      } else {
+        alert("Payment link not available. Please try again.");
+      }
+    } catch (err) {
+      console.error("Create Maya payment failed", err);
+      // surface server hint if available
+      const serverMsg =
+        err.response?.data?.message ||
+        err.response?.data?.maya?.message ||
+        "Unable to start payment. Please try again.";
+      alert(serverMsg);
+    } finally {
+      setPaying(null);
+    }
   };
 
   if (loading) {
@@ -233,9 +267,21 @@ function PatientHomepage() {
                           </td>
                           <td>
                             {appointment.payment_method === "maya" && 
-                             appointment.payment_status === "awaiting_payment" && (
-                              <button className="btn btn-sm btn-primary">
-                                Pay Now
+                             appointment.payment_status === "awaiting_payment" &&
+                             appointment.status === "approved" && (
+                              <button 
+                                className="btn btn-sm btn-primary"
+                                onClick={() => handlePayNow(appointment.id)}
+                                disabled={paying === appointment.id}
+                              >
+                                {paying === appointment.id ? (
+                                  <>
+                                    <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                    Redirecting...
+                                  </>
+                                ) : (
+                                  "Pay Now"
+                                )}
                               </button>
                             )}
                           </td>

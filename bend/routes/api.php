@@ -45,6 +45,10 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
 Route::post('/forgot-password', [PasswordResetLinkController::class, 'store']);
 Route::post('/reset-password', [NewPasswordController::class, 'store']);
 
+// Send password reset link for authenticated users
+Route::post('/send-password-reset', [PasswordResetLinkController::class, 'sendForAuthenticatedUser'])
+    ->middleware('auth:sanctum');
+
 // ------------------------
 // Authenticated user profile
 // ------------------------

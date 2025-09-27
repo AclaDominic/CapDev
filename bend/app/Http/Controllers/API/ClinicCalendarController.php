@@ -127,7 +127,7 @@ class ClinicCalendarController extends Controller
     private function peakConcurrentForDate(Carbon $date): int
     {
         $appts = Appointment::whereDate('date', $date->toDateString())
-            ->whereIn('status', ['pending', 'approved'])
+            ->whereIn('status', ['pending', 'approved', 'completed'])
             ->get(['time_slot']);
 
         $usage = [];
@@ -393,7 +393,7 @@ class ClinicCalendarController extends Controller
             ->join('patients as p', 'p.id', '=', 'a.patient_id')             // join via patient
             ->join('clinic_calendar as c', 'c.date', '=', 'a.date')
             ->where('p.user_id', $user->id)                                  // filter by signed-in user
-            ->whereIn('a.status', ['pending', 'approved'])
+            ->whereIn('a.status', ['pending', 'approved', 'completed'])
             ->whereBetween('a.date', [$today->toDateString(), $until->toDateString()])
             ->where('c.is_open', false)                                      // closed days only
             ->orderBy('a.date')
