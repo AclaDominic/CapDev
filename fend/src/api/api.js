@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "", // same-origin; Laravel + SPA via ngrok
+  baseURL: "/", // same-origin; Laravel + SPA via ngrok
   withCredentials: true,
   headers: {
     "X-Requested-With": "XMLHttpRequest",

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate, NavLink } from "react-router-dom";
 import api from "../api/api";
+import { useAuth } from "../hooks/useAuth";
 import NotificationsBell from "../components/NotificationBell";
 import { getFingerprint } from "../utils/getFingerprint";
 import "./StaffLayout.css";
 
 function StaffLayout() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [allowInventory, setAllowInventory] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [deviceStatus, setDeviceStatus] = useState(null);
@@ -61,13 +63,8 @@ function StaffLayout() {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await api.post("/logout");
-      localStorage.removeItem("token");
-      navigate("/");
-    } catch (err) {
-      console.error("Logout failed", err);
-    }
+    await logout();
+    navigate("/app");
   };
 
   const linkState = (isActive) =>

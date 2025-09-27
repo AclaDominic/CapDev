@@ -11,11 +11,18 @@ export default function AuthRedirector() {
   useEffect(() => {
     if (authLoading) return;
 
-    const publicRoutes = ['/', '/login', '/register', '/forgot-password'];
+    const publicRoutes = ['/app', '/login', '/register', '/forgot-password'];
+    
+    // If user is logged in and on a public route, redirect to their dashboard
     if (user && publicRoutes.includes(location.pathname)) {
       if (user.role === 'admin') navigate('/admin');
       else if (user.role === 'staff') navigate('/staff');
       else if (user.role === 'patient') navigate('/patient');
+    }
+    
+    // If no user is logged in and not on a public route, redirect to /app (landing page)
+    if (!user && !publicRoutes.includes(location.pathname)) {
+      navigate('/');
     }
   }, [user, authLoading, location.pathname, navigate]);
 

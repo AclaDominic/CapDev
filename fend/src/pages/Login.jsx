@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import api from "../api/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 import AuthLayout from "../layouts/AuthLayout";
 import { getFingerprint } from "../utils/getFingerprint";
+import { useAuth } from "../hooks/useAuth";
 import "./Logs.css"; // ✅ Your custom CSS
 import logo from "./logo.png";
 
@@ -14,6 +15,20 @@ function Login() {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const { setUser } = useAuth();
+  
+  // Get redirect info from navigation state
+  const redirectMessage = location.state?.message || "";
+  const redirectTo = location.state?.redirectTo || null;
+  const preselectedService = location.state?.preselectedService || null;
+
+  useEffect(() => {
+    // Show redirect message if user was redirected from booking
+    if (redirectMessage) {
+      setMessage(redirectMessage);
+    }
+  }, [redirectMessage]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -26,11 +41,23 @@ function Login() {
 
       const user = res.data.user || res.data;
       setMessage("Login successful!");
+      
+      // Update authentication context
+      setUser(user);
 
       setTimeout(() => {
         if (user.role === "admin") navigate("/admin");
         else if (user.role === "staff") navigate("/staff");
-        else if (user.role === "patient") navigate("/patient");
+        else if (user.role === "patient") {
+          // If user was redirected from booking, go to appointment page
+          if (redirectTo === "/patient/appointment") {
+            navigate("/patient/appointment", { 
+              state: { preselectedService } 
+            });
+          } else {
+            navigate("/patient");
+          }
+        }
         else setMessage("Login successful, but no dashboard yet for this role.");
       }, 150);
     } catch (err) {
@@ -62,6 +89,13 @@ function Login() {
             Please log in to access your appointments, treatment history, and personalized dental care. <br />
             Your oral health is just a click away!
           </p>
+          
+          {redirectMessage && (
+            <div className="alert alert-info mb-4">
+              <i className="bi bi-info-circle me-2"></i>
+              {redirectMessage}
+            </div>
+          )}
 
           <div className="left-highlights">
             <div className="highlight">

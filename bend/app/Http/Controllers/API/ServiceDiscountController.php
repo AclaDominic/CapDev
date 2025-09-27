@@ -212,4 +212,34 @@ class ServiceDiscountController extends Controller
         return response()->json($discounts);
     }
 
+    /**
+     * Public endpoint for landing page - returns current and future promos
+     */
+    public function publicIndex(Service $service)
+    {
+        $today = now()->toDateString();
+        
+        // Return only current and future promos (not past ones)
+        $promos = $service->discounts()
+            ->whereIn('status', ['planned', 'launched'])
+            ->where('end_date', '>=', $today) // Only current and future promos
+            ->orderBy('start_date')
+            ->get()
+            ->map(function($promo) {
+                // Only return fields needed for public display
+                return [
+                    'id' => $promo->id,
+                    'service_id' => $promo->service_id,
+                    'start_date' => $promo->start_date,
+                    'end_date' => $promo->end_date,
+                    'discounted_price' => $promo->discounted_price,
+                    'status' => $promo->status,
+                    'created_at' => $promo->created_at,
+                    'updated_at' => $promo->updated_at
+                ];
+            });
+
+        return response()->json($promos);
+    }
+
 }

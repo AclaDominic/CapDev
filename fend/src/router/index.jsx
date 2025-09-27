@@ -50,6 +50,7 @@ import ConsumeStockPage from "../pages/Staff/ConsumeStockPage";
 
 // Patient layout and pages
 import PatientLayout from "../layouts/PatientLayout";
+import PatientHomepage from "../pages/Patient/PatientHomepage";
 import BookAppointment from "../pages/Patient/BookAppointment";
 import PatientProfile from "../pages/Patient/PatientProfile";
 import PatientAppointments from "../pages/Patient/PatientAppointments";
@@ -161,6 +162,7 @@ export default function AppRouter() {
 
         {/* Patient Routes */}
         <Route path="/patient" element={<PatientLayout />}>
+          <Route index element={<PatientHomepage />} />
           <Route path="appointment" element={<BookAppointment />} />
           <Route path="profile" element={<PatientProfile />} />
           <Route path="appointments" element={<PatientAppointments />} />

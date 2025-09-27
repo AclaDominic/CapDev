@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import LoadingSpinner from "../components/LoadingSpinner";
+import ServicesAndPromos from "../components/ServicesAndPromos";
 import "./LandingPage.css";
 import kreativeLogo from "./logo.png"; 
 
@@ -14,18 +15,25 @@ function LandingPage() {
 
   if (user && user.role === "patient") {
     return (
-      <div className="container mt-5 text-center">
-        <h2>Welcome, {user.name || "Patient"} 🦷</h2>
-        <p>Select an action below:</p>
-        <Link to="/patient/appointment" className="btn btn-primary m-2">
-          Book Appointment
-        </Link>
-        <Link to="/patient/history" className="btn btn-outline-secondary m-2">
-          View History
-        </Link>
-        <Link to="/patient/profile" className="btn btn-outline-info m-2">
-          Profile
-        </Link>
+      <div className="container mt-5">
+        <div className="text-center mb-5">
+          <h2>Welcome, {user.name || "Patient"} 🦷</h2>
+          <p className="lead">Select an action below or browse our services:</p>
+          <div className="mb-4">
+            <Link to="/patient/appointment" className="btn btn-primary m-2">
+              Book Appointment
+            </Link>
+            <Link to="/patient/appointments" className="btn btn-outline-secondary m-2">
+              View Appointments
+            </Link>
+            <Link to="/patient/profile" className="btn btn-outline-info m-2">
+              Profile
+            </Link>
+          </div>
+        </div>
+        
+        {/* Services and Promos for Patient */}
+        <ServicesAndPromos />
       </div>
     );
   }
@@ -73,6 +81,9 @@ function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Services and Promos Section */}
+      <ServicesAndPromos />
 
       {/* Features Section */}
       <section className="features-section py-5">

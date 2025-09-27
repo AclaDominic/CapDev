@@ -22,6 +22,7 @@ class AuthenticatedSessionController extends Controller
     $request->validate([
         'email' => ['required', 'string', 'email'],
         'password' => ['required', 'string'],
+        'device_id' => ['nullable', 'string'],
     ]);
 
     if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {

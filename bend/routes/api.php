@@ -254,6 +254,12 @@ Route::middleware(['auth:sanctum', EnsureDeviceIsApproved::class])->group(functi
 });
 
 // ------------------------
+// Public service routes (read-only) - NO AUTH REQUIRED
+// ------------------------
+Route::get('/public/services', [ServiceController::class, 'publicIndex']);
+Route::get('/public/services/{service}/discounts', [ServiceDiscountController::class, 'publicIndex']);
+
+// ------------------------
 // Public service routes (read-only)
 // ------------------------
 Route::middleware('auth:sanctum')->get('/services', [ServiceController::class, 'index']);

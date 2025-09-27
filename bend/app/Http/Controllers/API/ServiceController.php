@@ -100,4 +100,44 @@ class ServiceController extends Controller
         $service->delete();
         return response()->json(null, 204);
     }
+
+    /**
+     * Public endpoint for landing page - returns active services with current promos
+     */
+    public function publicIndex()
+    {
+        $services = Service::where('is_active', true)
+            ->with(['bundledServices', 'bundleItems', 'discounts' => function($query) {
+                $query->whereIn('status', ['planned', 'launched'])
+                      ->orderBy('start_date');
+            }])
+            ->get()
+            ->map(function($service) {
+                // Clean up the service data for public display
+                $serviceData = $service->toArray();
+                
+                // Remove internal fields that might cause rendering issues
+                unset($serviceData['is_excluded_from_analytics']);
+                
+                // Clean up discounts data
+                if (isset($serviceData['discounts'])) {
+                    $serviceData['discounts'] = collect($serviceData['discounts'])->map(function($discount) {
+                        return [
+                            'id' => $discount['id'],
+                            'service_id' => $discount['service_id'],
+                            'start_date' => $discount['start_date'],
+                            'end_date' => $discount['end_date'],
+                            'discounted_price' => $discount['discounted_price'],
+                            'status' => $discount['status'],
+                            'created_at' => $discount['created_at'],
+                            'updated_at' => $discount['updated_at']
+                        ];
+                    })->toArray();
+                }
+                
+                return $serviceData;
+            });
+
+        return response()->json($services);
+    }
 }

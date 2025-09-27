@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate, NavLink } from "react-router-dom";
 import api from "../api/api";
+import { useAuth } from "../hooks/useAuth";
 import "./AdminLayout.css";
 import NotificationsBell from "../components/NotificationBell";
 
 function AdminLayout() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 992);
 
   // Keep sidebar open by default on lg+, closed on md-
@@ -19,13 +21,8 @@ function AdminLayout() {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await api.post("/logout");
-      localStorage.removeItem("token");
-      navigate("/");
-    } catch (err) {
-      console.error("Logout failed", err);
-    }
+    await logout();
+    navigate("/app");
   };
 
   return (

@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
+import { useAuth } from "../../hooks/useAuth";
 
 const StaffProfile = () => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -19,14 +21,7 @@ const StaffProfile = () => {
   }, []);
 
   const handleResetRequest = async () => {
-    try {
-      // Logout before redirecting
-      await api.post("/logout");
-      localStorage.removeItem("token");
-    } catch (err) {
-      console.warn("Logout failed, proceeding anyway.");
-    }
-
+    await logout();
     navigate("/forgot-password", {
       state: {
         email: user.email,

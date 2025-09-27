@@ -17,8 +17,18 @@ export function AuthProvider({ children }) {
     return () => { mounted = false };
   }, []);
 
+  const logout = async () => {
+    try {
+      await api.post("/api/logout");
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      setUser(null);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser, authLoading }}>
+    <AuthContext.Provider value={{ user, setUser, authLoading, logout }}>
       {children}
     </AuthContext.Provider>
   );
