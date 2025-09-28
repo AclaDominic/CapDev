@@ -3,6 +3,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import api from "../../api/api";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { addClinicHeader } from "../../utils/pdfHeader";
 
 export default function PromoArchive() {
   const currentYear = new Date().getFullYear();
@@ -26,21 +27,25 @@ export default function PromoArchive() {
     }
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     const doc = new jsPDF();
+    
+    // Add clinic header
+    const headerEndY = await addClinicHeader(doc, 20);
+    
     doc.setFont("helvetica", "normal");
     doc.setFontSize(14);
-    doc.text(`Promo Archive - ${year}`, 14, 16);
+    doc.text(`Promo Archive - ${year}`, 40, headerEndY);
 
     autoTable(doc, {
-      startY: 20,
+      startY: headerEndY + 20,
       head: [["Service", "Start", "End", "Price", "Status", "Activated"]],
       body: promos.map((promo) => [
         promo.service?.name || "-",
         promo.start_date,
         promo.end_date,
-        `PHP ${Number(promo.discounted_price).toFixed(2)}`, // Replaces ₱ with "PHP"
-        promo.status.charAt(0).toUpperCase() + promo.status.slice(1), // Capitalize
+        `PHP ${Number(promo.discounted_price).toFixed(2)}`,
+        promo.status.charAt(0).toUpperCase() + promo.status.slice(1),
         promo.activated_at?.split("T")[0] || "-",
       ]),
       theme: "grid",

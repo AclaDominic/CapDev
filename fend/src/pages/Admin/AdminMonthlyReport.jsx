@@ -14,6 +14,7 @@ import {
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Line, Bar, Doughnut } from "react-chartjs-2";
+import { addClinicHeader } from "../../utils/pdfHeader";
 
 ChartJS.register(
   CategoryScale,
@@ -332,19 +333,42 @@ export default function AdminMonthlyReport() {
       const { default: jsPDF } = await import("jspdf");
       const { default: autoTable } = await import("jspdf-autotable");
       const doc = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
-      doc.setFontSize(14);
-      doc.text(`Monthly Visits Report — ${month}`, 40, 40);
-      doc.setFontSize(11);
+      
+      // Helper function to add section title
+      const addSectionTitle = (doc, title, currentY) => {
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 119, 182); // Brand color
+        doc.text(title, 40, currentY);
+        
+        // Reset text color for normal text
+        doc.setTextColor(0, 0, 0);
+        return currentY + 15;
+      };
 
+      // Add clinic header
+      let currentY = await addClinicHeader(doc, 20);
+      
+      // Add report title
+      doc.setFontSize(14);
+      doc.text(`Monthly Visits Report — ${month}`, 40, currentY);
+      currentY += 30;
+
+      // SECTION 1: OVERVIEW
+      currentY = addSectionTitle(doc, "Overview", currentY);
+      
       autoTable(doc, {
-        startY: 60,
+        startY: currentY,
         head: [["Metric", "Value"]],
         body: [["Total Visits", String(data?.totals?.visits ?? 0)]],
         theme: "striped",
       });
 
+      // SECTION 2: DAILY ANALYSIS
+      currentY = addSectionTitle(doc, "Daily Visit Analysis", (doc.lastAutoTable?.finalY || 100) + 20);
+
       autoTable(doc, {
-        startY: (doc.lastAutoTable?.finalY || 100) + 20,
+        startY: currentY,
         head: [["Day", "Count"]],
         body: (byDay || []).map((r) => [r.day, String(r.count)]),
         theme: "grid",
@@ -370,8 +394,11 @@ export default function AdminMonthlyReport() {
         });
       }
 
+      // SECTION 3: HOURLY ANALYSIS
+      currentY = addSectionTitle(doc, "Hourly Visit Analysis", (doc.lastAutoTable?.finalY || 100) + 20);
+
       autoTable(doc, {
-        startY: (doc.lastAutoTable?.finalY || 100) + 20,
+        startY: currentY,
         head: [["Hour", "Total (month)", "Avg/day"]],
         body: (byHour || []).map((r) => [
           r.label,
@@ -401,8 +428,11 @@ export default function AdminMonthlyReport() {
         });
       }
 
+      // SECTION 4: VISIT TYPE ANALYSIS
+      currentY = addSectionTitle(doc, "Visit Type Analysis", (doc.lastAutoTable?.finalY || 100) + 20);
+
       autoTable(doc, {
-        startY: (doc.lastAutoTable?.finalY || 100) + 20,
+        startY: currentY,
         head: [["Visit Type", "Count"]],
         body: (visitType || []).map((r) => [r.label, String(r.count)]),
         theme: "grid",
@@ -428,8 +458,11 @@ export default function AdminMonthlyReport() {
         });
       }
 
+      // SECTION 5: SERVICE ANALYSIS
+      currentY = addSectionTitle(doc, "Service Usage Analysis", (doc.lastAutoTable?.finalY || 100) + 20);
+
       autoTable(doc, {
-        startY: (doc.lastAutoTable?.finalY || 100) + 20,
+        startY: currentY,
         head: [["Service", "Count"]],
         body: (byService || []).map((r) => [r.label, String(r.count)]),
         theme: "grid",

@@ -262,6 +262,21 @@ export default function AdminAnalyticsDashboard() {
     );
   }, [k]);
 
+  const followUpInsight = useMemo(() => {
+    const rate = k?.patient_follow_up_rate?.value ?? 0;
+    const change = k?.patient_follow_up_rate?.pct_change ?? 0;
+    const total = k?.patient_follow_up_rate?.total_first_time_patients ?? 0;
+    const returned = k?.patient_follow_up_rate?.returned_patients ?? 0;
+    
+    if (total === 0) return null;
+    
+    return `Follow-up rate: ${rate}% (${returned}/${total} patients returned within 3-4 months). ` +
+      `Change: ${change >= 0 ? '▲' : '▼'}${Math.abs(change)}%. ` +
+      (rate >= 50 ? 'Excellent retention! This indicates strong patient satisfaction.' : 
+       rate >= 30 ? 'Good retention. Consider strategies to improve further.' : 
+       'Consider implementing follow-up calls, appointment reminders, or patient satisfaction surveys.');
+  }, [k]);
+
   const topServiceInsight = useMemo(() => {
     const s = (data?.top_services || [])[0];
     if (!s) return null;
@@ -491,6 +506,16 @@ export default function AdminAnalyticsDashboard() {
                   "avgDuration"
                 )}
               </div>
+              <div className="col-6 col-sm-4 col-md-3 col-lg-2 col-xl-2">
+                {kpiCard(
+                  "Total Revenue",
+                  `₱${(k?.total_revenue?.value ?? 0).toLocaleString()}`,
+                  k?.total_revenue?.pct_change,
+                  "💰",
+                  "#10b981",
+                  "visits"
+                )}
+              </div>
             </div>
 
             <div className="row g-2 g-md-3 g-lg-4">
@@ -582,6 +607,14 @@ export default function AdminAnalyticsDashboard() {
                         <small className="text-muted">{paymentInsight}</small>
                       </div>
                     )}
+                    {followUpInsight && (
+                      <div
+                        className="mt-3 p-3 rounded-3"
+                        style={{ backgroundColor: "rgba(139, 92, 246, 0.05)" }}
+                      >
+                        <small className="text-muted">{followUpInsight}</small>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -599,19 +632,19 @@ export default function AdminAnalyticsDashboard() {
                       className="mb-0 fw-bold d-flex align-items-center"
                       style={{ color: "#1e293b" }}
                     >
-                      <span className="me-2">🏆</span>
-                      Top Services
+                      <span className="me-2">💰</span>
+                      Revenue by Service
                     </h5>
                   </div>
                   <div className="card-body pt-0">
                     <div className="list-group list-group-flush">
-                      {(data?.top_services || []).map((s, index) => (
+                      {(data?.top_revenue_services || []).map((s, index) => (
                         <div
                           key={`${s.service_id}-${s.service_name}`}
                           className="list-group-item border-0 px-0 py-3 d-flex justify-content-between align-items-center"
                           style={{
                             borderBottom:
-                              index < (data?.top_services || []).length - 1
+                              index < (data?.top_revenue_services || []).length - 1
                                 ? "1px solid rgba(0,0,0,0.05)"
                                 : "none",
                           }}
@@ -649,7 +682,7 @@ export default function AdminAnalyticsDashboard() {
                               className="me-3 fs-6"
                               style={{ color: "#1f2937" }}
                             >
-                              {s.count}
+                              ₱{s.revenue.toLocaleString()}
                             </strong>
                             <span
                               className={`badge ${
@@ -665,23 +698,28 @@ export default function AdminAnalyticsDashboard() {
                           </div>
                         </div>
                       ))}
-                      {(data?.top_services || []).length === 0 && (
+                      {(data?.top_revenue_services || []).length === 0 && (
                         <div className="text-center py-4 text-muted">
-                          <span className="fs-4">📊</span>
-                          <p className="mt-2 mb-0">No service data available</p>
+                          <span className="fs-4">💰</span>
+                          <p className="mt-2 mb-0">No revenue data available</p>
                         </div>
                       )}
                     </div>
-                    {topServiceInsight && (
-                      <div
-                        className="mt-3 p-3 rounded-3"
-                        style={{ backgroundColor: "rgba(16, 185, 129, 0.05)" }}
-                      >
-                        <small className="text-muted">
-                          {topServiceInsight}
-                        </small>
+                    <div
+                      className="mt-3 p-3 rounded-3"
+                      style={{ backgroundColor: "rgba(16, 185, 129, 0.05)" }}
+                    >
+                      <div className="small text-muted mb-2 fw-medium">
+                        Total Revenue This Month:
                       </div>
-                    )}
+                      <div className="fs-4 fw-bold text-success">
+                        ₱{(k?.total_revenue?.value ?? 0).toLocaleString()}
+                      </div>
+                      <div className="small text-muted">
+                        {k?.total_revenue?.pct_change >= 0 ? "↗" : "↘"}{" "}
+                        {Math.abs(k?.total_revenue?.pct_change ?? 0).toFixed(1)}% vs last month
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

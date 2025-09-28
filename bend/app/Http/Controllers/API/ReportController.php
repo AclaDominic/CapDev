@@ -227,6 +227,125 @@ class ReportController extends Controller
         $hmoSharePrev = round(($hmoPrev / $denomPrev) * 100.0, 2);
         $mayaSharePrev = round(($mayaPrev / $denomPrev) * 100.0, 2);
 
+        // Revenue by service (from paid payments linked to visits)
+        $revenueByServiceCurr = DB::table('payments as p')
+            ->join('patient_visits as v', 'p.patient_visit_id', '=', 'v.id')
+            ->leftJoin('services as s', 's.id', '=', 'v.service_id')
+            ->where('p.status', 'paid')
+            ->whereBetween('p.paid_at', [$start, $end])
+            ->selectRaw('v.service_id, COALESCE(s.name, "(Unspecified)") as service_name, SUM(p.amount_paid) as revenue')
+            ->groupBy('v.service_id', 's.name')
+            ->orderByDesc('revenue')
+            ->limit(5)
+            ->get();
+
+        $revenueByServicePrev = DB::table('payments as p')
+            ->join('patient_visits as v', 'p.patient_visit_id', '=', 'v.id')
+            ->leftJoin('services as s', 's.id', '=', 'v.service_id')
+            ->where('p.status', 'paid')
+            ->whereBetween('p.paid_at', [$prevStart, $prevEnd])
+            ->selectRaw('v.service_id, SUM(p.amount_paid) as revenue')
+            ->groupBy('v.service_id')
+            ->pluck('revenue', 'service_id');
+
+        $topRevenueServices = $revenueByServiceCurr->map(function ($row) use ($revenueByServicePrev, $safePct) {
+            $prev = (float) ($revenueByServicePrev[$row->service_id] ?? 0);
+            $curr = (float) $row->revenue;
+            return [
+                'service_id' => $row->service_id,
+                'service_name' => $row->service_name,
+                'revenue' => round($curr, 2),
+                'prev_revenue' => round($prev, 2),
+                'pct_change' => $safePct($curr, $prev),
+            ];
+        });
+
+        // Total revenue for the month
+        $totalRevenueCurr = DB::table('payments')
+            ->where('status', 'paid')
+            ->whereBetween('paid_at', [$start, $end])
+            ->sum('amount_paid');
+
+        $totalRevenuePrev = DB::table('payments')
+            ->where('status', 'paid')
+            ->whereBetween('paid_at', [$prevStart, $prevEnd])
+            ->sum('amount_paid');
+
+        // Patient follow-up rate (patients who returned within 3-4 months)
+        // Look at patients who had their first visit 3-4 months ago and see if they returned
+        $followUpStart = (clone $start)->subMonths(4)->startOfMonth();
+        $followUpEnd = (clone $start)->subMonths(3)->endOfMonth();
+        
+        // Get patients who had their first visit 3-4 months ago
+        $firstTimePatients = DB::table('patient_visits as v')
+            ->whereNotNull('v.start_time')
+            ->whereBetween('v.start_time', [$followUpStart, $followUpEnd])
+            ->selectRaw('v.patient_id, MIN(v.start_time) as first_visit')
+            ->groupBy('v.patient_id')
+            ->get();
+        
+        $totalFirstTimePatients = $firstTimePatients->count();
+        $returnedPatients = 0;
+        
+        if ($totalFirstTimePatients > 0) {
+            // Check if these patients returned within 3-4 months after their first visit
+            foreach ($firstTimePatients as $patient) {
+                $firstVisit = Carbon::parse($patient->first_visit);
+                $followUpWindowStart = $firstVisit->copy()->addMonths(3);
+                $followUpWindowEnd = $firstVisit->copy()->addMonths(4);
+                
+                $hasReturned = DB::table('patient_visits')
+                    ->where('patient_id', $patient->patient_id)
+                    ->whereNotNull('start_time')
+                    ->whereBetween('start_time', [$followUpWindowStart, $followUpWindowEnd])
+                    ->exists();
+                
+                if ($hasReturned) {
+                    $returnedPatients++;
+                }
+            }
+        }
+        
+        $followUpRateCurr = $totalFirstTimePatients > 0 
+            ? round(($returnedPatients / $totalFirstTimePatients) * 100.0, 2) 
+            : 0;
+        
+        // Calculate previous month's follow-up rate for comparison
+        $prevFollowUpStart = (clone $prevStart)->subMonths(4)->startOfMonth();
+        $prevFollowUpEnd = (clone $prevStart)->subMonths(3)->endOfMonth();
+        
+        $prevFirstTimePatients = DB::table('patient_visits as v')
+            ->whereNotNull('v.start_time')
+            ->whereBetween('v.start_time', [$prevFollowUpStart, $prevFollowUpEnd])
+            ->selectRaw('v.patient_id, MIN(v.start_time) as first_visit')
+            ->groupBy('v.patient_id')
+            ->get();
+        
+        $prevTotalFirstTimePatients = $prevFirstTimePatients->count();
+        $prevReturnedPatients = 0;
+        
+        if ($prevTotalFirstTimePatients > 0) {
+            foreach ($prevFirstTimePatients as $patient) {
+                $firstVisit = Carbon::parse($patient->first_visit);
+                $followUpWindowStart = $firstVisit->copy()->addMonths(3);
+                $followUpWindowEnd = $firstVisit->copy()->addMonths(4);
+                
+                $hasReturned = DB::table('patient_visits')
+                    ->where('patient_id', $patient->patient_id)
+                    ->whereNotNull('start_time')
+                    ->whereBetween('start_time', [$followUpWindowStart, $followUpWindowEnd])
+                    ->exists();
+                
+                if ($hasReturned) {
+                    $prevReturnedPatients++;
+                }
+            }
+        }
+        
+        $followUpRatePrev = $prevTotalFirstTimePatients > 0 
+            ? round(($prevReturnedPatients / $prevTotalFirstTimePatients) * 100.0, 2) 
+            : 0;
+
         // Simple daily series for sparkline on frontend
         $visitsByDay = DB::table('patient_visits as v')
             ->whereNotNull('v.start_time')
@@ -243,19 +362,19 @@ class ReportController extends Controller
             if ($noShowRate >= 20.0) {
                 $alerts[] = [
                     'type' => 'warning',
-                    'message' => "High no-show rate: {$noShowRate}% of approved appointments",
+                    'message' => "High no-show rate: {$noShowRate}% of approved appointments. Consider implementing reminder systems or appointment confirmation calls.",
                 ];
             }
         }
         if ($avgDurCurr >= 100) {
             $alerts[] = [
                 'type' => 'info',
-                'message' => 'Average visit duration is unusually long (>= 100 minutes).',
+                'message' => 'Average visit duration is unusually long (>= 100 minutes). This may indicate complex procedures or potential scheduling inefficiencies.',
             ];
         } elseif ($avgDurCurr > 0 && $avgDurCurr <= 25) {
             $alerts[] = [
                 'type' => 'info',
-                'message' => 'Average visit duration is quite short (<= 25 minutes).',
+                'message' => 'Average visit duration is quite short (<= 25 minutes). Consider if consultations are thorough enough or if quick procedures are being scheduled efficiently.',
             ];
         }
         if (!empty($topServices[0])) {
@@ -263,16 +382,54 @@ class ReportController extends Controller
             if ($visitsCurr > 0 && ($top['count'] / $visitsCurr) >= 0.5) {
                 $alerts[] = [
                     'type' => 'info',
-                    'message' => 'One service accounts for over 50% of visits. Consider balancing workload.',
+                    'message' => 'One service accounts for over 50% of visits. Consider balancing workload across different services or promoting underutilized services.',
                 ];
             }
         }
+        
+        // Add follow-up rate alerts
+        if ($totalFirstTimePatients > 0) {
+            if ($followUpRateCurr < 20) {
+                $alerts[] = [
+                    'type' => 'warning',
+                    'message' => "Low patient follow-up rate: {$followUpRateCurr}% ({$returnedPatients}/{$totalFirstTimePatients} patients). Consider implementing follow-up calls, appointment reminders, or patient satisfaction surveys.",
+                ];
+            } elseif ($followUpRateCurr >= 50) {
+                $alerts[] = [
+                    'type' => 'info',
+                    'message' => "Excellent patient follow-up rate: {$followUpRateCurr}% ({$returnedPatients}/{$totalFirstTimePatients} patients). This indicates strong patient satisfaction and retention.",
+                ];
+            } elseif ($followUpRateCurr >= 30) {
+                $alerts[] = [
+                    'type' => 'info',
+                    'message' => "Good patient follow-up rate: {$followUpRateCurr}% ({$returnedPatients}/{$totalFirstTimePatients} patients). Consider strategies to improve further.",
+                ];
+            }
+        }
+        
+        // Add payment method insights as alerts
         $shareSpike = $hmoShareCurr - $hmoSharePrev;
         if ($shareSpike >= 15.0) {
             $alerts[] = [
                 'type' => 'info',
-                'message' => 'HMO share increased sharply vs last month (+'.round($shareSpike, 1).' pp).',
+                'message' => 'HMO share increased sharply vs last month (+'.round($shareSpike, 1).' pp). Monitor insurer approval times and patient satisfaction with HMO processes.',
             ];
+        }
+        
+        // Add visit volume alerts
+        if ($visitsCurr > 0) {
+            $visitChange = $safePct((float) $visitsCurr, (float) $visitsPrev);
+            if ($visitChange <= -20) {
+                $alerts[] = [
+                    'type' => 'warning',
+                    'message' => "Significant drop in visits: {$visitChange}% vs last month. Review marketing efforts, seasonal factors, or external competition.",
+                ];
+            } elseif ($visitChange >= 30) {
+                $alerts[] = [
+                    'type' => 'info',
+                    'message' => "Strong growth in visits: +{$visitChange}% vs last month. Consider capacity planning and staff scheduling adjustments.",
+                ];
+            }
         }
 
         return response()->json([
@@ -299,6 +456,18 @@ class ReportController extends Controller
                     'prev' => round($avgDurPrev, 2),
                     'pct_change' => $safePct($avgDurCurr, $avgDurPrev),
                 ],
+                'patient_follow_up_rate' => [
+                    'value' => $followUpRateCurr,
+                    'prev' => $followUpRatePrev,
+                    'pct_change' => $safePct($followUpRateCurr, $followUpRatePrev),
+                    'total_first_time_patients' => $totalFirstTimePatients,
+                    'returned_patients' => $returnedPatients,
+                ],
+                'total_revenue' => [
+                    'value' => round($totalRevenueCurr, 2),
+                    'prev' => round($totalRevenuePrev, 2),
+                    'pct_change' => $safePct($totalRevenueCurr, $totalRevenuePrev),
+                ],
                 'payment_method_share' => [
                     'cash' => [
                         'count' => $cashCurr,
@@ -321,6 +490,7 @@ class ReportController extends Controller
                 ],
             ],
             'top_services' => $topServices,
+            'top_revenue_services' => $topRevenueServices,
             'series' => [
                 'visits_by_day' => $visitsByDay,
             ],
@@ -328,4 +498,3 @@ class ReportController extends Controller
         ]);
     }
 }
-
