@@ -32,14 +32,13 @@ function AdminLayout() {
         <div className="sidebar-header d-flex align-items-center justify-content-between">
           <h5 className="m-0 fw-bold text-center">Admin Panel</h5>
           <div className="d-flex align-items-center gap-2">
-            
             {/* Close button (mobile) */}
             <button
               className="btn btn-sm btn-outline-light d-lg-none"
               onClick={() => setSidebarOpen(false)}
               aria-label="Close sidebar"
             >
-              ✕
+              <i className="bi bi-x"></i>
             </button>
           </div>
         </div>
@@ -191,17 +190,15 @@ function AdminLayout() {
     onClick={() => setSidebarOpen((v) => !v)}
     aria-label="Toggle sidebar"
   >
-    ☰
+    <i className="bi bi-list"></i>
   </button>
   <div className="flex-grow-1" />
   {/* Bell lives here only */}
   <NotificationsBell />
-
-
         </div>
 
         {/* Routed content */}
-        <main className="p-4">
+        <main className="flex-grow-1">
           <Outlet />
         </main>
       </div>

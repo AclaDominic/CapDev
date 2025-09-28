@@ -15,10 +15,11 @@
   left: 0;
   background: #121a23 !important; /* deeper than default .bg-dark */
   color: #fff;
-  transition: width .2s ease, transform .25s ease;
+  transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
   z-index: 1040;
   display: flex;
   flex-direction: column;
+  will-change: width, transform;
 }
 
 .sidebar-header{
@@ -70,6 +71,174 @@
   color: #0f172a;                 /* dark text for readability */
   display: flex;
   flex-direction: column;
+  transition: none;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Ensure full width utilization for admin pages */
+.content-area .container-fluid {
+  max-width: none !important;
+  width: 100% !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Ensure main content expands to full width */
+.content-area main {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* Admin Goals Page - Force full width utilization */
+.admin-goals-page {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 1rem !important;
+  margin: 0 !important;
+}
+
+.admin-goals-page .card {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* Promo Archive Page - Full screen utilization like Analytics Dashboard */
+.promo-archive-page {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.promo-archive-page .card {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.promo-archive-page .table {
+  width: 100% !important;
+}
+
+.promo-archive-page .table th,
+.promo-archive-page .table td {
+  white-space: nowrap;
+}
+
+/* Override any container constraints */
+.content-area main .promo-archive-page {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Service Discounts Page - Full screen utilization like Analytics Dashboard */
+.service-discounts-page {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  contain: layout style paint;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.service-discounts-page .card {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.service-discounts-page .table {
+  width: 100% !important;
+}
+
+.service-discounts-page .table th,
+.service-discounts-page .table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  transition: none;
+  transform: translateZ(0);
+}
+
+/* Override any container constraints for service discounts */
+.content-area main .service-discounts-page {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Fix modal z-index issues */
+.service-discounts-page .modal {
+  z-index: 1055 !important;
+}
+
+.service-discounts-page .modal-backdrop {
+  z-index: 1050 !important;
+}
+
+/* Prevent body scroll issues when modal is open */
+body.modal-open {
+  overflow: hidden !important;
+  padding-right: 0 !important;
+}
+
+/* Prevent scrollbar width compensation */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Ensure content area maintains width when modal opens */
+.content-area {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* Ensure modal doesn't affect page width */
+.service-discounts-page .modal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .promo-archive-page {
+    padding: 1rem !important;
+  }
+  
+  .promo-archive-page .table th,
+  .promo-archive-page .table td {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem;
+  }
+
+  .service-discounts-page {
+    padding: 1rem !important;
+  }
+  
+  .service-discounts-page .table th,
+  .service-discounts-page .table td {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+  
+  .service-discounts-page .btn-group {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .service-discounts-page .btn-group .btn {
+    width: 100%;
+    margin: 0;
+  }
 }
 
 /* Light topbar to match white content */
@@ -99,21 +268,18 @@
 }
 
 /* Overlay for mobile when sidebar is open */
-/* overlay base */
 .sidebar-overlay{
   position: fixed;
   inset: 0;
-  background: transparent;   /* <-- walang tint */
+  background: rgba(0, 0, 0, 0.5);
   opacity: 0;
   pointer-events: none;
   transition: opacity .2s ease;
   z-index: 1030;
 }
 
-/* kapag open: overlay clickable pero transparent pa rin */
 .sidebar-open .sidebar-overlay{
-  background: transparent;   /* <-- siguraduhin transparent */
-  opacity: 1;                /* pwede ring 0; kung gusto mo walang fade */
+  opacity: 1;
   pointer-events: auto;
 }
 

@@ -137,8 +137,17 @@ export default function ServiceManager() {
   };
 
   return (
-    <div className="container">
-      <h1 className="mb-4">🦷 Service Management</h1>
+    <div className="container-fluid">
+      <div className="row">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-primary text-white">
+              <h1 className="card-title mb-0">
+                <i className="bi bi-gear me-2"></i>
+                Service Management
+              </h1>
+            </div>
+            <div className="card-body">
 
       <div className="mb-3">
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
@@ -584,6 +593,10 @@ export default function ServiceManager() {
           </div>
         </div>
       )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

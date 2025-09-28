@@ -378,23 +378,23 @@ export default function AdminAnalyticsDashboard() {
         </div>
       ) : (
         <>
-          <div className="row g-4 mb-4">
-            <div className="col-12 col-md-3">
+          <div className="row g-2 g-md-3 g-lg-4 mb-4">
+            <div className="col-6 col-sm-4 col-md-3 col-lg-2 col-xl-2">
               {kpiCard("Total Visits", k?.total_visits?.value, k?.total_visits?.pct_change, "👥", "#3b82f6", "visits")}
             </div>
-            <div className="col-12 col-md-3">
+            <div className="col-6 col-sm-4 col-md-3 col-lg-2 col-xl-2">
               {kpiCard("Approved Appointments", k?.approved_appointments?.value, k?.approved_appointments?.pct_change, "✅", "#10b981", "appointments")}
             </div>
-            <div className="col-12 col-md-3">
+            <div className="col-6 col-sm-4 col-md-3 col-lg-2 col-xl-2">
               {kpiCard("No-shows", k?.no_shows?.value, k?.no_shows?.pct_change, "❌", "#ef4444", "noShows")}
             </div>
-            <div className="col-12 col-md-3">
+            <div className="col-6 col-sm-4 col-md-3 col-lg-2 col-xl-2">
               {kpiCard("Avg Visit (min)", k?.avg_visit_duration_min?.value?.toFixed?.(1) ?? 0, k?.avg_visit_duration_min?.pct_change, "⏱️", "#f59e0b", "avgDuration")}
             </div>
           </div>
 
-          <div className="row g-4">
-            <div className="col-12 col-md-6">
+          <div className="row g-2 g-md-3 g-lg-4">
+            <div className="col-12 col-lg-6">
               <div className="card h-100 border-0 shadow-sm" style={{ 
                 background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
                 borderRadius: '16px'
@@ -434,7 +434,7 @@ export default function AdminAnalyticsDashboard() {
                 </div>
               </div>
             </div>
-            <div className="col-12 col-md-6">
+            <div className="col-12 col-lg-6">
               <div className="card h-100 border-0 shadow-sm" style={{ 
                 background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
                 borderRadius: '16px'

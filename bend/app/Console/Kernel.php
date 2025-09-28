@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('appointments:mark-no-shows')->hourly();
         $schedule->command('goals:update-progress')->dailyAt('01:15');
+        $schedule->command('promos:auto-cancel-expired')->dailyAt('02:00');
     }
 
     /**

@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\ServiceDiscount;
 use App\Http\Controllers\Controller;
 use App\Services\ClinicDateResolverService;
+use App\Services\SystemLogService;
 
 class ServiceDiscountController extends Controller
 {
@@ -18,9 +19,28 @@ class ServiceDiscountController extends Controller
             ->whereDate('end_date', '<', Carbon::today())
             ->update(['status' => 'done']);
 
+        // Auto-cancel planned promos that have passed their start date
+        $autoCancelCount = ServiceDiscount::where('status', 'planned')
+            ->whereDate('start_date', '<', Carbon::today())
+            ->get();
+
+        foreach ($autoCancelCount as $promo) {
+            $promo->status = 'canceled';
+            $promo->save();
+
+            // Log the automatic cancellation
+            SystemLogService::logSystem(
+                'promo_auto_canceled',
+                "Planned promo for {$promo->service->name} was automatically canceled due to start date having passed",
+                ['promo_id' => $promo->id, 'service_id' => $promo->service_id, 'start_date' => $promo->start_date]
+            );
+        }
+
+        $totalCleanupCount = $cleanupCount + $autoCancelCount->count();
+
         // Return active promos and cleanup count
         return response()->json([
-            'cleanup_count' => $cleanupCount,
+            'cleanup_count' => $totalCleanupCount,
             'promos' => $service->discounts()
                 ->whereIn('status', ['planned', 'launched'])
                 ->orderBy('start_date')
@@ -56,7 +76,7 @@ class ServiceDiscountController extends Controller
         }
 
         // Check clinic open days in range
-        $openDates = ClinicDateResolverService::getOpenDaysInRange(
+        $openDates = ClinicDateResolverService::getOpenDatesBetween(
             $validated['start_date'],
             $validated['end_date']
         );
@@ -96,7 +116,7 @@ class ServiceDiscountController extends Controller
         }
 
         $validated = $request->validate([
-            'start_date' => 'required|date|after:today',
+            'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
             'discounted_price' => 'required|numeric|min:0|max:' . $discount->service->price,
         ]);
@@ -178,8 +198,23 @@ class ServiceDiscountController extends Controller
     {
         $discount = ServiceDiscount::findOrFail($id);
 
+        if ($discount->status === 'planned') {
+            // Cancel planned promo
+            $discount->status = 'canceled';
+            $discount->save();
+
+            // Log the cancellation
+            SystemLogService::logSystem(
+                'promo_canceled',
+                "Planned promo for {$discount->service->name} was manually canceled by admin",
+                ['promo_id' => $discount->id, 'service_id' => $discount->service_id]
+            );
+
+            return response()->json(['message' => 'Planned promo canceled.']);
+        }
+
         if ($discount->status !== 'launched') {
-            return response()->json(['message' => 'Only launched promos can be canceled.'], 422);
+            return response()->json(['message' => 'Only planned or launched promos can be canceled.'], 422);
         }
 
         if (!$discount->activated_at || now()->diffInHours($discount->activated_at) > 24) {
@@ -188,6 +223,13 @@ class ServiceDiscountController extends Controller
 
         $discount->status = 'canceled';
         $discount->save();
+
+        // Log the cancellation
+        SystemLogService::logSystem(
+            'promo_canceled',
+            "Launched promo for {$discount->service->name} was manually canceled by admin",
+            ['promo_id' => $discount->id, 'service_id' => $discount->service_id]
+        );
 
         return response()->json(['message' => 'Promo canceled.']);
     }

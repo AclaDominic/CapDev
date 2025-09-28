@@ -75,70 +75,194 @@ export default function PromoArchive() {
   };
 
   return (
-    <div className="container">
-      <h1 className="mb-4">🗂️ Promo Archive</h1>
-
-      <div className="row align-items-end mb-3">
-        <div className="col-md-4">
-          <label className="form-label">Filter by Year</label>
-          <select
-            className="form-select"
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-          >
-            {[...Array(10)].map((_, i) => {
-              const y = currentYear - i;
-              return (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              );
-            })}
-          </select>
+    <div 
+      className="promo-archive-page"
+      style={{
+        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+        minHeight: '100vh',
+        width: '100vw',
+        position: 'relative',
+        left: 0,
+        right: 0,
+        padding: '1.5rem 2rem',
+        boxSizing: 'border-box'
+      }}
+    >
+      {/* Header Section */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 className="m-0 fw-bold" style={{ color: '#1e293b' }}>
+            📁 Promo Archive
+          </h2>
+          <p className="text-muted mb-0 mt-1">View and manage archived promotional campaigns</p>
         </div>
-        <div className="col-md-4 mt-3 mt-md-0">
-          <button className="btn btn-outline-dark w-100" onClick={exportToPDF}>
-            🖨️ Export as PDF
+        <div className="d-flex gap-3 align-items-center">
+          <div>
+            <label className="form-label fw-semibold mb-1">Filter by Year</label>
+            <select
+              className="form-control border-0 shadow-sm"
+              style={{ 
+                width: 120,
+                borderRadius: '12px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+            >
+              {[...Array(currentYear - 2022)].map((_, i) => {
+                const y = currentYear - i;
+                return (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+          <button 
+            className="btn border-0 shadow-sm" 
+            onClick={exportToPDF}
+            style={{
+              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              color: 'white',
+              borderRadius: '12px',
+              padding: '12px 24px',
+              fontWeight: '600',
+              transition: 'all 0.3s ease',
+              marginTop: '24px'
+            }}
+          >
+            <i className="bi bi-download me-2"></i>
+            Export PDF
           </button>
         </div>
       </div>
 
-      {loading ? (
-        <LoadingSpinner message="Loading archived promos..." />
-      ) : (
-        <table className="table table-bordered">
-          <thead className="table-light">
-            <tr>
-              <th>Service</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>Price (₱)</th>
-              <th>Status</th>
-              <th>Activated</th>
-            </tr>
-          </thead>
-          <tbody>
-            {promos.length > 0 ? (
-              promos.map((promo) => (
-                <tr key={promo.id}>
-                  <td>{promo.service?.name || "-"}</td>
-                  <td>{promo.start_date}</td>
-                  <td>{promo.end_date}</td>
-                  <td>₱{Number(promo.discounted_price).toFixed(2)}</td>
-                  <td>{renderStatusBadge(promo.status)}</td>
-                  <td>{promo.activated_at?.split("T")[0] || "-"}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" className="text-center text-muted">
-                  No promos found for {year}.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      )}
+      {/* Table Section */}
+      <div className="card border-0 shadow-sm" style={{ borderRadius: '16px' }}>
+        <div className="card-body p-0">
+          {loading ? (
+            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+              <div className="text-center">
+                <div className="spinner-border text-primary mb-3" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <p className="text-muted">Loading archived promos...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="table-responsive" style={{ width: '100%' }}>
+              <table className="table table-hover mb-0" style={{ width: '100%', tableLayout: 'fixed' }}>
+                <colgroup>
+                  <col style={{ width: '25%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '15%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '24%' }} />
+                </colgroup>
+                <thead className="table-primary">
+                  <tr>
+                    <th className="fw-semibold px-4 py-3 border-0" style={{ fontSize: '1.1rem' }}>
+                      <i className="bi bi-tag me-2"></i>Service Name
+                    </th>
+                    <th className="fw-semibold px-4 py-3 border-0" style={{ fontSize: '1.1rem' }}>
+                      <i className="bi bi-calendar-event me-2"></i>Start Date
+                    </th>
+                    <th className="fw-semibold px-4 py-3 border-0" style={{ fontSize: '1.1rem' }}>
+                      <i className="bi bi-calendar-x me-2"></i>End Date
+                    </th>
+                    <th className="fw-semibold px-4 py-3 border-0" style={{ fontSize: '1.1rem' }}>
+                      <i className="bi bi-currency-dollar me-2"></i>Discounted Price
+                    </th>
+                    <th className="fw-semibold px-4 py-3 border-0" style={{ fontSize: '1.1rem' }}>
+                      <i className="bi bi-activity me-2"></i>Status
+                    </th>
+                    <th className="fw-semibold px-4 py-3 border-0" style={{ fontSize: '1.1rem' }}>
+                      <i className="bi bi-clock-history me-2"></i>Date Activated
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {promos.length > 0 ? (
+                    promos.map((promo) => (
+                      <tr key={promo.id} className="align-middle" style={{ height: '60px' }}>
+                        <td className="px-4 py-3 fw-medium border-0" style={{ fontSize: '1rem' }}>
+                          <div className="d-flex align-items-center">
+                            <div className="bg-primary rounded-circle me-3 d-flex align-items-center justify-content-center" 
+                                 style={{ width: '40px', height: '40px', fontSize: '1.2rem' }}>
+                              🦷
+                            </div>
+                            <div>
+                              <div className="fw-bold text-dark">{promo.service?.name || "-"}</div>
+                              <small className="text-muted">Dental Service</small>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 border-0" style={{ fontSize: '1rem' }}>
+                          <div className="d-flex flex-column">
+                            <span className="fw-semibold text-dark">{promo.start_date}</span>
+                            <small className="text-muted">Campaign Start</small>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 border-0" style={{ fontSize: '1rem' }}>
+                          <div className="d-flex flex-column">
+                            <span className="fw-semibold text-dark">{promo.end_date}</span>
+                            <small className="text-muted">Campaign End</small>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 border-0" style={{ fontSize: '1rem' }}>
+                          <div className="d-flex flex-column">
+                            <span className="fw-bold text-success fs-5">₱{Number(promo.discounted_price).toFixed(2)}</span>
+                            <small className="text-muted">Promotional Price</small>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 border-0" style={{ fontSize: '1rem' }}>
+                          <div className="d-flex flex-column align-items-start">
+                            {renderStatusBadge(promo.status)}
+                            <small className="text-muted mt-1">Current State</small>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-muted border-0" style={{ fontSize: '1rem' }}>
+                          <div className="d-flex flex-column">
+                            <span className="fw-semibold text-dark">{promo.activated_at?.split("T")[0] || "-"}</span>
+                            <small className="text-muted">
+                              {promo.activated_at ? "Launch Date" : "Not Activated"}
+                            </small>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="text-center text-muted border-0" style={{ height: '400px' }}>
+                        <div className="d-flex flex-column align-items-center justify-content-center py-5">
+                          <div className="bg-light rounded-circle mb-4 d-flex align-items-center justify-content-center" 
+                               style={{ width: '120px', height: '120px', fontSize: '3rem' }}>
+                            📁
+                          </div>
+                          <h3 className="text-muted mb-3">No promos found for {year}</h3>
+                          <p className="text-muted mb-4 fs-5">This year doesn't have any promotional campaigns yet.</p>
+                          <div className="d-flex gap-3">
+                            <button className="btn btn-outline-primary">
+                              <i className="bi bi-plus-circle me-2"></i>Create New Promo
+                            </button>
+                            <button className="btn btn-outline-secondary">
+                              <i className="bi bi-calendar me-2"></i>Try Different Year
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

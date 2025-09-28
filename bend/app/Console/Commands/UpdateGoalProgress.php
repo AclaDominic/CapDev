@@ -70,11 +70,24 @@ class UpdateGoalProgress extends Command
                     ->count();
                     
             case 'service_availment':
-                return DB::table('patient_visits')
+                // Count visits for the specific service, but exclude those with active discounts
+                $query = DB::table('patient_visits')
                     ->whereNotNull('start_time')
                     ->where('service_id', $goal->service_id)
-                    ->whereBetween('start_time', [$periodStart, $effectiveEnd])
-                    ->count();
+                    ->whereBetween('start_time', [$periodStart, $effectiveEnd]);
+                
+                // Exclude visits where the service had an active discount at the time of visit
+                $query->whereNotExists(function ($subQuery) use ($periodStart, $effectiveEnd) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('service_discounts')
+                        ->whereColumn('service_discounts.service_id', 'patient_visits.service_id')
+                        ->where('service_discounts.status', 'launched')
+                        ->whereRaw('patient_visits.start_time >= service_discounts.start_date')
+                        ->whereRaw('patient_visits.start_time <= service_discounts.end_date')
+                        ->whereRaw('service_discounts.activated_at <= DATE_SUB(patient_visits.start_time, INTERVAL 1 DAY)');
+                });
+                
+                return $query->count();
                     
             case 'package_promo_availment':
                 // Count visits for the package/promo service itself

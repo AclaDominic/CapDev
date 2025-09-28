@@ -21,14 +21,14 @@ class GoalController extends Controller
             'metric' => ['required', Rule::in(['total_visits', 'service_availment', 'package_promo_availment'])],
             'target_value' => ['required', 'integer', 'min:1'],
             'service_id' => ['nullable', 'integer', 'exists:services,id'], // required for service_availment
-            'package_promo_id' => ['nullable', 'integer', 'exists:services,id'], // required for package_promo_availment
+            'package_id' => ['nullable', 'integer', 'exists:services,id'], // required for package_promo_availment
         ]);
 
         // Additional validation based on metric type
         if ($validated['metric'] === 'service_availment' && !$validated['service_id']) {
             return response()->json(['message' => 'Service ID is required for service availment metric'], 422);
         }
-        if ($validated['metric'] === 'package_promo_availment' && !$validated['package_promo_id']) {
+        if ($validated['metric'] === 'package_promo_availment' && !$validated['package_id']) {
             return response()->json(['message' => 'Package/Promo ID is required for package/promo availment metric'], 422);
         }
         if ($validated['period_type'] === 'promo' && !$validated['period_end']) {
@@ -53,7 +53,7 @@ class GoalController extends Controller
             'status' => 'active',
             'created_by' => $request->user()->id,
             'service_id' => $validated['service_id'] ?? null,
-            'package_id' => $validated['package_promo_id'] ?? null,
+            'package_id' => $validated['package_id'] ?? null,
             'promo_id' => null, // No longer used
         ]);
 
@@ -104,8 +104,8 @@ class GoalController extends Controller
             return [
                 'id' => $g->id,
                 'period_type' => $g->period_type,
-                'period_start' => $g->period_start?->format('Y-m-d'),
-                'period_end' => $g->period_end?->format('Y-m-d'),
+                'period_start' => $g->period_start ? $g->period_start->format('Y-m-d') : null,
+                'period_end' => $g->period_end ? $g->period_end->format('Y-m-d') : null,
                 'metric' => $g->metric,
                 'target_value' => (int)$g->target_value,
                 'status' => $g->status,
@@ -151,11 +151,24 @@ class GoalController extends Controller
                     ->count();
                     
             case 'service_availment':
-                return DB::table('patient_visits')
+                // Count visits for the specific service, but exclude those with active discounts
+                $query = DB::table('patient_visits')
                     ->whereNotNull('start_time')
                     ->where('service_id', $goal->service_id)
-                    ->whereBetween('start_time', [$periodStart, $effectiveEnd])
-                    ->count();
+                    ->whereBetween('start_time', [$periodStart, $effectiveEnd]);
+                
+                // Exclude visits where the service had an active discount at the time of visit
+                $query->whereNotExists(function ($subQuery) use ($periodStart, $effectiveEnd) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('service_discounts')
+                        ->whereColumn('service_discounts.service_id', 'patient_visits.service_id')
+                        ->where('service_discounts.status', 'launched')
+                        ->whereRaw('patient_visits.start_time >= service_discounts.start_date')
+                        ->whereRaw('patient_visits.start_time <= service_discounts.end_date')
+                        ->whereRaw('service_discounts.activated_at <= DATE_SUB(patient_visits.start_time, INTERVAL 1 DAY)');
+                });
+                
+                return $query->count();
                     
             case 'package_promo_availment':
                 // Count visits for the package/promo service itself
