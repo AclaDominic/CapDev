@@ -205,8 +205,8 @@ function AdminLayout() {
 
       {/* Mobile overlay */}
       <div
-        className={`sidebar-overlay ${sidebarOpen ? "show" : ""}`}
-        onClick={() => setSidebarOpen(false)}
+        // className={`sidebar-overlay ${sidebarOpen ? "show" : ""}`}
+        // onClick={() => setSidebarOpen(false)}
       />
     </div>
   );

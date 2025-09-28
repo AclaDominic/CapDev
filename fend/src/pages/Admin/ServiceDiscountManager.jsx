@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import api from "../../api/api";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { ServiceSelectModal, EditPromoModal } from "../../components/ServiceDiscountModals";
+import "./ServiceDiscountManager.css";
 
 export default function ServiceDiscountManager() {
   const [services, setServices] = useState([]);
