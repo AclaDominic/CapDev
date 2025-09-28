@@ -196,32 +196,36 @@ class ReportController extends Controller
             ];
         });
 
-        // Payment method share (cash vs hmo) from paid payments in the month
+        // Payment method share (cash, hmo, maya) from paid payments in the month
         $payCurr = DB::table('payments')
             ->where('status', 'paid')
             ->whereBetween('paid_at', [$start, $end])
-            ->whereIn('method', ['cash', 'hmo'])
+            ->whereIn('method', ['cash', 'hmo', 'maya'])
             ->selectRaw('method, COUNT(*) as count')
             ->groupBy('method')
             ->pluck('count', 'method');
         $payPrev = DB::table('payments')
             ->where('status', 'paid')
             ->whereBetween('paid_at', [$prevStart, $prevEnd])
-            ->whereIn('method', ['cash', 'hmo'])
+            ->whereIn('method', ['cash', 'hmo', 'maya'])
             ->selectRaw('method, COUNT(*) as count')
             ->groupBy('method')
             ->pluck('count', 'method');
 
         $cashCurr = (int) ($payCurr['cash'] ?? 0);
         $hmoCurr = (int) ($payCurr['hmo'] ?? 0);
+        $mayaCurr = (int) ($payCurr['maya'] ?? 0);
         $cashPrev = (int) ($payPrev['cash'] ?? 0);
         $hmoPrev = (int) ($payPrev['hmo'] ?? 0);
-        $denomCurr = max(1, $cashCurr + $hmoCurr);
-        $denomPrev = max(1, $cashPrev + $hmoPrev);
+        $mayaPrev = (int) ($payPrev['maya'] ?? 0);
+        $denomCurr = max(1, $cashCurr + $hmoCurr + $mayaCurr);
+        $denomPrev = max(1, $cashPrev + $hmoPrev + $mayaPrev);
         $cashShareCurr = round(($cashCurr / $denomCurr) * 100.0, 2);
         $hmoShareCurr = round(($hmoCurr / $denomCurr) * 100.0, 2);
+        $mayaShareCurr = round(($mayaCurr / $denomCurr) * 100.0, 2);
         $cashSharePrev = round(($cashPrev / $denomPrev) * 100.0, 2);
         $hmoSharePrev = round(($hmoPrev / $denomPrev) * 100.0, 2);
+        $mayaSharePrev = round(($mayaPrev / $denomPrev) * 100.0, 2);
 
         // Simple daily series for sparkline on frontend
         $visitsByDay = DB::table('patient_visits as v')
@@ -307,6 +311,12 @@ class ReportController extends Controller
                         'share_pct' => $hmoShareCurr,
                         'prev_share_pct' => $hmoSharePrev,
                         'pct_point_change' => round($hmoShareCurr - $hmoSharePrev, 2),
+                    ],
+                    'maya' => [
+                        'count' => $mayaCurr,
+                        'share_pct' => $mayaShareCurr,
+                        'prev_share_pct' => $mayaSharePrev,
+                        'pct_point_change' => round($mayaShareCurr - $mayaSharePrev, 2),
                     ],
                 ],
             ],
